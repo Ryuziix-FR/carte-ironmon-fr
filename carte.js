@@ -582,6 +582,7 @@ const JEU_DU_TRACKER = (j) => {
   if (/HGSS|HeartGold|SoulSilver/i.test(n)) return "hgss";
   if (/Platin/i.test(n)) return "platine";
   if (/Omega|Alpha|Oméga|ROSA|ORAS/i.test(n)) return "rosa";
+  if (/Soleil|Lune|Sun|Moon/i.test(n)) return "soleil";
   if (/(Black|White|Noire|Blanche)\s*2/i.test(n)) return "noire2";
   if (/Black|White|Noire|Blanche/i.test(n)) return "noire";
   return null;
