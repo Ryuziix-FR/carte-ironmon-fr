@@ -164,6 +164,7 @@ function bulleDresseur(d, k) {
   const mouv = d.marche ? "🚶 Se déplace" : d.tourne ? "🔄 Se retourne" : "";
   return `<b>${echap(d.nom)}</b>${d.lieu ? `<div class="l">${echap(d.lieu)}</div>` : ""}`
     + `<div>${d.nb} Pokémon — niv. <span class="niv">${d.niv.join(", ")}</span></div>`
+    + (d.approx ? '<div class="l">Combat scénarisé : bon lieu, position sur la carte approximative</div>' : "")
     + (d.variantes || []).map((v) => `<div class="l">Ou, selon la version ou l'avancée : ${echap(v.nom)} — niv. ${v.niv.join(", ")}</div>`).join("")
     + (mouv ? `<div class="l">${mouv}</div>` : "") + fait;
 }
