@@ -616,15 +616,27 @@ async function lireTracker() {
     const run = d.chrono?.debut;
     if (run && derniereRun && run !== derniereRun && reglages.autoReset) nouvelleRun(true);
     derniereRun = run || derniereRun;
-    if (d.lieu && d.lieu !== dernierNomLieu) {
-      dernierNomLieu = d.lieu;
-      const l = trouverLieu(d.lieu);
+    // Le suivi Citra donne aussi la position du joueur (x, z du jeu) : l'épingle suit alors ses pas
+    const cleSuivi = d.lieu + (d.x != null ? `|${d.x}|${d.z}` : "");
+    if (d.lieu && cleSuivi !== dernierNomLieu) {
+      const nouveauLieu = !dernierNomLieu || dernierNomLieu.split("|")[0] !== d.lieu;
+      dernierNomLieu = cleSuivi;
+      let l = trouverLieu(d.lieu);
       $("etat-tracker").textContent = (fichierSuivi ? "Jeu relié ✔ — " : "Tracker connecté ✔ — ") + (l ? l.nom : d.lieu);
+      const R = l && JEUX[jeuId].regions[l.region];
+      if (l && R.origine && d.x != null && d.z != null) {
+        const [u, px] = R.echelle;
+        l = Object.assign({}, l, { x: Math.round((d.x / u - R.origine[0]) * px), y: Math.round((d.z / u - R.origine[1]) * px) });
+      }
       if (l) {
         lieuActuel = l;
         if ((reglages.suivre || OBS) && l.region !== regionId) changerRegion(l.region);
         placerIci(l);
-        if (reglages.suivre || OBS) map.flyTo(ll(l.x, l.y), OBS ? Number(params.get("zoom") || 4.5) : Math.max(map.getZoom(), 4), { duration: 1 });
+        if (reglages.suivre || OBS) {
+          // Pas à pas dans un même lieu : on glisse sans changer le zoom
+          if (nouveauLieu) map.flyTo(ll(l.x, l.y), OBS ? Number(params.get("zoom") || 4.5) : Math.max(map.getZoom(), 4), { duration: 1 });
+          else map.panTo(ll(l.x, l.y), { animate: true, duration: 0.5 });
+        }
       }
       $("bandeau").textContent = "📍 " + (l ? l.nom : d.lieu);
       $("bandeau").hidden = !OBS;
@@ -687,7 +699,7 @@ $("ouvrir-aide").onclick = () => $("aide").showModal();
 map.on("moveend", () => { etat.vues[regionId] = { c: map.getCenter(), z: map.getZoom() }; enregistrer(); });
 
 // Choix du jeu (les autres jeux arrivent au fur et à mesure)
-const TOUS_LES_JEUX = [["hgss", "HeartGold / SoulSilver"], ["platine", "Platine"], ["noire", "Noire / Blanche"], ["noire2", "Noire 2 / Blanche 2"], ["rosa", "Rubis Oméga / Saphir Alpha"]];
+const TOUS_LES_JEUX = [["hgss", "HeartGold / SoulSilver"], ["platine", "Platine"], ["noire", "Noire / Blanche"], ["noire2", "Noire 2 / Blanche 2"], ["rosa", "Rubis Oméga / Saphir Alpha"], ["soleil", "Soleil / Lune"]];
 for (const [id, nom] of TOUS_LES_JEUX) {
   const o = document.createElement("option");
   o.value = id;
