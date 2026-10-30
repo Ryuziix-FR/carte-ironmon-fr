@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carte IronMON FR</title>
+<link rel="icon" href="images/icones/pokeball.png">
+<link rel="stylesheet" href="lib/leaflet/leaflet.css">
+<link rel="stylesheet" href="carte.css">
+</head>
+<body>
+<div id="carte"></div>
+
+<!-- Barre du haut : jeu, région, recherche -->
+<header id="barre">
+  <button id="btn-panneau" class="rond" title="Panneau de réglages" aria-label="Ouvrir le panneau">☰</button>
+  <select id="choix-jeu" title="Jeu"></select>
+  <div id="regions" class="groupe"></div>
+  <div id="zone-recherche">
+    <input id="recherche" type="search" placeholder="Chercher un lieu, un dresseur, « CT »…" autocomplete="off">
+    <ul id="resultats" hidden></ul>
+  </div>
+</header>
+
+<!-- Panneau de réglages -->
+<aside id="panneau" class="ferme">
+  <div class="panneau-tete">
+    <strong>Réglages</strong>
+    <button id="fermer-panneau" class="rond petit" aria-label="Fermer">✕</button>
+  </div>
+
+  <section id="progression"></section>
+
+  <section>
+    <h3>Afficher</h3>
+    <label><input type="checkbox" id="voir-dresseurs" checked> Dresseurs</label>
+    <label><input type="checkbox" id="voir-objets" checked> Objets</label>
+    <label><input type="checkbox" id="voir-ct" checked> CT</label>
+    <label><input type="checkbox" id="voir-caches" checked> Objets cachés</label>
+    <label><input type="checkbox" id="voir-faits" checked> Ce que j'ai déjà fait</label>
+    <label><input type="checkbox" id="voir-passages"> Passages (grottes, échelles)</label>
+    <div class="sous" id="liens-passages">
+      Relier les passages :
+      <label><input type="radio" name="liens" value="jamais" checked> non</label>
+      <label><input type="radio" name="liens" value="survol"> au survol</label>
+      <label><input type="radio" name="liens" value="toujours"> toujours</label>
+    </div>
+    <label><input type="checkbox" id="voir-itineraires"> Itinéraires des grottes</label>
+    <label><input type="checkbox" id="voir-notes" checked> Mes notes</label>
+  </section>
+
+  <section>
+    <h3>Arènes et chefs</h3>
+    <p class="aide">Le niveau le plus haut de leur équipe, pour savoir jusqu'où monter.</p>
+    <ul id="liste-chefs" class="liste"></ul>
+  </section>
+
+  <section>
+    <h3>Mes notes</h3>
+    <button id="ajouter-note" class="bouton">📌 Ajouter une note sur la carte</button>
+    <ul id="liste-notes" class="liste"></ul>
+  </section>
+
+  <section>
+    <h3>Tracker</h3>
+    <p id="etat-tracker" class="aide">Recherche du tracker…</p>
+    <label><input type="checkbox" id="suivre" checked> Suivre ma position</label>
+    <label><input type="checkbox" id="auto-reset"> Tout décocher à chaque nouvelle run</label>
+  </section>
+
+  <section>
+    <button id="nouvelle-run" class="bouton danger">🔄 Nouvelle run : tout décocher</button>
+    <button id="ouvrir-aide" class="bouton">❓ Aide et crédits</button>
+  </section>
+</aside>
+
+<!-- Bandeau de position (surtout pour OBS) -->
+<div id="bandeau" hidden></div>
+<div id="mode-note" hidden>Clique sur la carte pour placer ta note — <button id="annuler-note">Annuler</button></div>
+
+<dialog id="aide">
+  <h2>Carte IronMON FR</h2>
+  <ul>
+    <li><b>Clic sur un dresseur ou un objet</b> : le cocher (battu / ramassé). Re-clic pour décocher.</li>
+    <li><b>Clic droit</b> (ou appui long sur téléphone) : le marquer d'une étoile, pour s'en souvenir.</li>
+    <li><b>Passages</b> : clique sur un carré de couleur pour sauter à l'autre bout.</li>
+    <li><b>Recherche</b> : un lieu (« Route 32 », « Rosalia »), un dresseur (« Albert »), « CT », « caché », « arène ».</li>
+    <li><b>Tracker</b> : si la carte est ouverte sur le PC du stream, via le serveur du tracker
+      (<code>http://localhost:8080/carte-ironmon/</code>), elle montre où tu es pendant la run.</li>
+    <li><b>Pour OBS</b> : ajoute <code>?obs=1</code> à l'adresse (mini-carte qui suit ta position).</li>
+  </ul>
+  <p class="credit" id="credit"></p>
+  <p class="credit">Noms français lus dans la version française du jeu. Pokémon © Nintendo / Creatures / Game Freak.</p>
+  <form method="dialog"><button class="bouton">Fermer</button></form>
+</dialog>
+
+<script src="lib/leaflet/leaflet.js"></script>
+<script>window.JEUX = {};</script>
+<script src="donnees/hgss.js"></script>
+<script src="donnees/platine.js"></script>
+<script src="donnees/noire.js"></script>
+<script src="donnees/noire2.js"></script>
+<script src="carte.js"></script>
+</body>
+</html>

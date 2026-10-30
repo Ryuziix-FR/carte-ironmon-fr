@@ -1,0 +1,11 @@
+CARTE IRONMON FR
+================
+
+Carte interactive pour les runs IronMON, en français : HeartGold / SoulSilver, Platine,
+Noire / Blanche et Noire 2 / Blanche 2.
+
+Les coches et les notes sont gardées dans ton navigateur.
+Pour OBS : ajoute ?obs=1 à l'adresse.
+
+Crédits : carte HGSS d'origine « HGSS IronMON Map » de Kelsey Young, licence MIT
+(voir LICENCE-carte-HGSS-originale.txt). Pokémon © Nintendo / Creatures / Game Freak.
