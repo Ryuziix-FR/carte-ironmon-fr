@@ -71,10 +71,39 @@ let fondCarte, couches = {}, entites = [], lieuxIndex = {}, ici = null, lieuActu
 
 function cleEntite(type, i) { return `${regionId}-${type}-${i}`; }
 
+// ---------- Lien de progression : un bit par dresseur et par objet du jeu (fait ou non) ----------
+function bitsDuJeu(j) {
+  const cles = [];
+  for (const [rid, r] of Object.entries(j.regions)) {
+    r.dresseurs.forEach((_, i) => cles.push(`${rid}-d-${i}`));
+    r.objets.forEach((_, i) => cles.push(`${rid}-o-${i}`));
+  }
+  return cles;
+}
+function coderProgression(j, fait) {
+  const cles = bitsDuJeu(j), octets = new Uint8Array(Math.ceil(cles.length / 8));
+  cles.forEach((k, i) => { if (fait[k]) octets[i >> 3] |= 1 << (i & 7); });
+  return btoa(String.fromCharCode(...octets)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decoderProgression(j, code) {
+  const brut = atob(code.replace(/-/g, "+").replace(/_/g, "/")), fait = {};
+  bitsDuJeu(j).forEach((k, i) => { if ((brut.charCodeAt(i >> 3) || 0) & (1 << (i & 7))) fait[k] = 1; });
+  return fait;
+}
+// Ouvert avec ?jeu=…&prog=… : on montre la progression de quelqu'un d'autre, sans toucher à la sienne
+const PROG = params.get("prog");
+let LECTURE = !!PROG && !OBS;
+
 function changerJeu(id) {
   jeuId = id;
   jeu = JEUX[id];
+  // Changer de jeu pendant une progression partagée : on revient à la sienne
+  if (LECTURE && id !== params.get("jeu")) quitterLecture();
   etat = memoire.lire(id);
+  if (LECTURE) {
+    try { etat = { fait: decoderProgression(JEUX[id], PROG), etoile: {}, notes: [], vues: {} }; }
+    catch (e) { quitterLecture(); }
+  }
   try { localStorage.setItem("carte-ironmon-jeu", id); } catch (e) {}
   $("choix-jeu").value = id;
   document.body.dataset.jeu = id;
@@ -254,10 +283,17 @@ function construire() {
   }
 
   // Noms des lieux posés sur la carte (les intérieurs)
-  for (const e of region.etiquettes || []) {
-    couches.etiquettes.addLayer(L.marker(ll(e.x, e.y), { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "etiquette-lieu", html: `<span>${echap(e.texte)}</span>`, iconSize: null, iconAnchor: [0, 0] }) }));
-  }
+  panneaux = [];
+  const poserPanneau = (x, y, nom, classe) => {
+    const m = L.marker(ll(x, y), { keyboard: false,
+      icon: L.divIcon({ className: classe, html: `<span>${echap(nom)}</span>`, iconSize: null, iconAnchor: [0, 0] }) });
+    m.bindTooltip(() => bulleLieu(nom), { className: "bulle", direction: "top", offset: [0, -10] });
+    m.on("click", () => m.toggleTooltip());
+    m.on("add", () => marquerFini(m, nom));
+    panneaux.push({ m, nom });
+    couches.etiquettes.addLayer(m);
+  };
+  for (const e of region.etiquettes || []) poserPanneau(e.x, e.y, e.texte, "etiquette-lieu");
   // Sur l'extérieur, un panneau par ville et par route (pas les étages ni les intérieurs)
   if (!(region.etiquettes || []).length) {
     const vus = new Set();
@@ -268,8 +304,7 @@ function construire() {
       const route = /^Route\b/.test(l.nom);
       const detail = route || /^(Arène|Sous-sol|Accès|Tour|Phare|Centre|Repaire|Ruines|Puits|Caves?|Grotte|Mont|Bois|Parc|Chemin|Lac|Labo|Maison|Zone|Pont|Château|Cave|Usine|Musée|Cascade|Forêt|Gouffre|Désert|Égouts|Bâtiment|Manoir|Mine)\b/i.test(l.nom)
         || /Pokéathlon|Safari|Sauvage|Ligue/i.test(l.nom);
-      couches.etiquettes.addLayer(L.marker(ll(l.x, l.y), { interactive: false, keyboard: false,
-        icon: L.divIcon({ className: "panneau-lieu" + (route ? " route" : "") + (detail ? " detail" : ""), html: `<span>${echap(l.nom)}</span>`, iconSize: null, iconAnchor: [0, 0] }) }));
+      poserPanneau(l.x, l.y, l.nom, "panneau-lieu" + (route ? " route" : "") + (detail ? " detail" : ""));
     }
   }
 
@@ -301,7 +336,37 @@ function appliquerFiltres() {
   }
 }
 
+// ---------- Compteur par lieu : ce qu'il reste à faire sous chaque panneau ----------
+let panneaux = [];
+// « Route 3 » compte « Route 3 » et « Route 3 — … », jamais « Route 30 »
+const dansLieu = (lieu, nom) => lieu === nom || (lieu || "").startsWith(nom + " —");
+function compteLieu(nom) {
+  const c = { d: 0, df: 0, o: 0, of: 0 };
+  for (const e of entites) {
+    const x = e.genre === "dresseur" ? e.d : e.o;
+    if (!dansLieu(x.lieu, nom)) continue;
+    const fait = etat.fait[e.cle] ? 1 : 0;
+    if (e.genre === "dresseur") { c.d++; c.df += fait; } else { c.o++; c.of += fait; }
+  }
+  return c;
+}
+function bulleLieu(nom) {
+  const c = compteLieu(nom);
+  if (!c.d && !c.o) return `<b>${echap(nom)}</b><div class="l">Aucun dresseur ni objet ici.</div>`;
+  const ligne = (titre, fait, total) => total
+    ? `<span>${titre}</span><span class="${fait === total ? "vide" : "reste"}">${fait === total ? "✔ tout fait" : `${total - fait} restant${total - fait > 1 ? "s" : ""} sur ${total}`}</span>` : "";
+  return `<b>${echap(nom)}</b><div class="compte">${ligne("Dresseurs", c.df, c.d)}${ligne("Objets", c.of, c.o)}</div>`;
+}
+function marquerFini(m, nom) {
+  const el = m.getElement();
+  if (!el) return;
+  const c = compteLieu(nom);
+  el.classList.toggle("fini", c.d + c.o > 0 && c.df + c.of === c.d + c.o);
+}
+const majPanneauxLieux = () => { for (const p of panneaux) marquerFini(p.m, p.nom); };
+
 function basculer(e, quoi) {
+  if (LECTURE) return; // progression partagée : on regarde sans toucher
   if (etat[quoi][e.cle]) delete etat[quoi][e.cle];
   else etat[quoi][e.cle] = 1;
   enregistrer();
@@ -310,6 +375,7 @@ function basculer(e, quoi) {
   if (!visible(e)) couches.entites.removeLayer(e.rect);
   decor(e, true);
   majPanneau();
+  majPanneauxLieux();
 }
 
 function eclair(couche) {
@@ -320,7 +386,7 @@ function eclair(couche) {
   el.classList.add("eclair");
 }
 
-function enregistrer() { memoire.ecrire(jeuId, etat); }
+function enregistrer() { if (!LECTURE) memoire.ecrire(jeuId, etat); }
 
 // ---------- Notes ----------
 function dessinerNotes() {
@@ -380,12 +446,22 @@ function majPanneau() {
 
   const chefs = $("liste-chefs");
   chefs.innerHTML = "";
-  const liste = ds.filter((e) => e.d.chef || e.d.rival);
+  // Dans l'ordre du jeu : du niveau max le plus bas au plus haut ; le premier chef pas encore battu est le prochain
+  const max = (e) => Math.max(...e.d.niv);
+  const liste = ds.filter((e) => e.d.chef || e.d.rival).sort((a, b) => max(a) - max(b));
+  const prochain = liste.find((e) => e.d.chef && !etat.fait[e.cle]);
   if (!liste.length) chefs.innerHTML = '<li class="aide">Aucun dans cette région.</li>';
+  let rang = 0;
   for (const e of liste) {
     const li = document.createElement("li");
-    li.innerHTML = `<span class="fait">${etat.fait[e.cle] ? "✔" : "·"}</span><span>${echap(e.d.nom)}`
-      + `<br><small class="aide">${echap(e.d.lieu || "")}</small></span><span class="niv">${Math.max(...e.d.niv)}</span>`;
+    const fait = !!etat.fait[e.cle];
+    if (e.d.chef) rang++;
+    li.classList.toggle("fait-chef", fait);
+    li.classList.toggle("prochain", e === prochain);
+    li.innerHTML = `<span class="rang">${fait ? "✔" : e.d.chef ? rang : "⚔"}</span><span>${echap(e.d.nom)}`
+      + (e === prochain ? '<span class="etiquette-prochain">Prochain</span>' : "")
+      + (e.d.rival ? '<span class="rival-tag">Rival</span>' : "")
+      + `<br><small class="aide">${echap(e.d.lieu || "")}</small></span><span class="niv">${max(e)}</span>`;
     li.onclick = () => allerA(e.rect.getBounds().getCenter(), 6, e.rect);
     chefs.appendChild(li);
   }
@@ -546,6 +622,7 @@ async function lireTracker() {
 }
 
 function nouvelleRun(auto) {
+  if (LECTURE) return;
   if (!auto && !confirm("Tout décocher pour une nouvelle run ? (Tes notes sont gardées.)")) return;
   etat.fait = {};
   etat.etoile = {};
@@ -553,6 +630,7 @@ function nouvelleRun(auto) {
   for (const e of entites) { e.rect.setStyle(styleEntite(e)); }
   appliquerFiltres();
   majPanneau();
+  majPanneauxLieux();
 }
 
 // ---------- Réglages ----------
@@ -593,8 +671,98 @@ for (const [id, nom] of TOUS_LES_JEUX) {
 let jeuChoisi = params.has("jeu");
 $("choix-jeu").onchange = (ev) => { jeuChoisi = true; changerJeu(ev.target.value); index = []; };
 
+// ---------- Progression partagée (lecture seule) ----------
+function quitterLecture() {
+  LECTURE = false;
+  document.body.classList.remove("lecture-seule");
+  $("bandeau-partage").hidden = true;
+}
+if (LECTURE) {
+  document.body.classList.add("lecture-seule");
+  $("bandeau-partage").hidden = false;
+  $("quitter-partage").onclick = () => { location.href = location.pathname + "?jeu=" + jeuId; };
+}
+$("partager").onclick = () => {
+  const lien = `${location.origin}${location.pathname}?jeu=${jeuId}&prog=${coderProgression(jeu, etat.fait)}`;
+  $("partage-jeu").textContent = jeu.nom;
+  $("lien-partage").value = lien;
+  $("lien-copie").hidden = true;
+  $("dialogue-partage").showModal();
+  $("lien-partage").select();
+};
+$("copier-lien").onclick = async () => {
+  try { await navigator.clipboard.writeText($("lien-partage").value); $("lien-copie").hidden = false; }
+  catch (e) { $("lien-partage").select(); }
+};
+
+// ---------- Sauvegarder / charger : coches et notes de tous les jeux dans un fichier ----------
+const messageSauvegarde = (t) => { $("etat-sauvegarde").textContent = t; $("etat-sauvegarde").hidden = false; };
+$("sauver").onclick = () => {
+  const donnees = { carte: "carte-ironmon-fr", version: 1, date: new Date().toISOString(), reglages, jeux: {} };
+  for (const [id] of TOUS_LES_JEUX) donnees.jeux[id] = id === jeuId && !LECTURE ? etat : memoire.lire(id);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(donnees, null, 1)], { type: "application/json" }));
+  a.download = `carte-ironmon-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  messageSauvegarde("Fichier créé : garde-le pour retrouver ta progression ailleurs.");
+};
+$("charger").onclick = () => $("fichier-sauvegarde").click();
+$("fichier-sauvegarde").onchange = async (ev) => {
+  const f = ev.target.files[0];
+  ev.target.value = "";
+  if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.carte !== "carte-ironmon-fr" || !d.jeux) throw new Error("format");
+    for (const [id, e] of Object.entries(d.jeux)) if (JEUX[id]) memoire.ecrire(id, e);
+    if (d.reglages) { Object.assign(reglages, d.reglages); sauverReglages(); }
+    quitterLecture();
+    changerJeu(jeuId);
+    index = [];
+    messageSauvegarde("Progression chargée ✔");
+  } catch (e) {
+    messageSauvegarde("Ce fichier n'est pas une sauvegarde de la carte. Choisis le fichier .json créé par « Sauvegarder ».");
+  }
+};
+
+// ---------- Légende ----------
+function basculerLegende(ouvrir) {
+  const voir = ouvrir ?? $("legende").hidden;
+  $("legende").hidden = !voir;
+  $("btn-legende").setAttribute("aria-expanded", String(voir));
+}
+$("btn-legende").onclick = () => basculerLegende();
+
+// ---------- Raccourcis clavier ----------
+document.addEventListener("keydown", (ev) => {
+  if (ev.ctrlKey || ev.metaKey || ev.altKey || OBS) return;
+  const t = ev.target;
+  if (t.matches && t.matches("input, textarea, select")) return;
+  if (document.querySelector("dialog[open]") || !$("accueil").hidden) return;
+  const regions = Object.keys(jeu.regions);
+  const k = ev.key;
+  if (k === "/") { ev.preventDefault(); $("recherche").focus(); }
+  else if (/^[1-9]$/.test(k) && regions[k - 1]) changerRegion(regions[k - 1]);
+  else if (k === "r" || k === "R") {
+    if (lieuActuel) { if (lieuActuel.region !== regionId) changerRegion(lieuActuel.region); allerA(ll(lieuActuel.x, lieuActuel.y), 5); }
+    else allerA(ll(region.depart[0], region.depart[1]), 4);
+  }
+  else if (k === "p" || k === "P") $("panneau").classList.toggle("ferme");
+  else if (k === "l" || k === "L") basculerLegende();
+  else if (k === "j" || k === "J") ouvrirAccueil();
+  else if (k === "?") $("aide").showModal();
+  else if (k === "+" || k === "=") map.zoomIn(0.5);
+  else if (k === "-") map.zoomOut(0.5);
+  else if (k === "Escape") { basculerLegende(false); $("panneau").classList.add("ferme"); }
+});
+
 changerJeu(jeuId);
 majZoom();
+if (LECTURE) {
+  const n = Object.keys(etat.fait).length;
+  $("partage-info").textContent = `${jeu.nom}, ${n} dresseur${n > 1 ? "s" : ""} et objet${n > 1 ? "s" : ""} faits`;
+}
 
 // ---------- Écran d'accueil : une grande carte illustrée par jeu ----------
 function ouvrirAccueil() {

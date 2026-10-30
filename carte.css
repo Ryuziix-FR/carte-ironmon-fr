@@ -12,7 +12,7 @@
   --or: #f4c542;
   --vert: #47c46b;
   --bord: rgba(255, 255, 255, 0.14);
-  --pixel: "Pixelify Sans", "Segoe UI", system-ui, sans-serif;
+  --pixel: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   color-scheme: dark;
 }
 /* ---------- Une couleur par jeu ---------- */
@@ -236,3 +236,63 @@ body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent
   #btn-jeu .nom-court { display: inline; }
   .carte-jeu { height: 150px; }
 }
+
+/* ---------- Prototype : légende ---------- */
+.pastille-flottante { position: fixed; left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000; height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--bord); background: var(--panneau);
+  backdrop-filter: blur(14px); color: var(--texte); font: 600 13px var(--pixel); cursor: pointer; }
+.pastille-flottante:hover, .pastille-flottante[aria-expanded="true"] { border-color: var(--accent); }
+#legende { position: fixed; left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000; width: min(300px, calc(100vw - 20px)); padding: 12px 14px; border-radius: 14px; border: 1px solid var(--bord);
+  background: var(--panneau-plein); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.legende-tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+#legende ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+#legende li { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+#legende li img { width: 14px; height: 14px; image-rendering: pixelated; }
+#legende li i { font-style: normal; }
+.cadre { width: 16px; height: 20px; flex: none; border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+.cadre.pointille { border-style: dashed; }
+.cadre.plein { width: 18px; height: 18px; border-width: 3px; background: color-mix(in srgb, var(--c) 35%, transparent); }
+.symbole { width: 16px; text-align: center; flex: none; }
+body.obs .pastille-flottante, body.obs #legende { display: none; }
+
+/* ---------- Prototype : compteur par lieu ---------- */
+.panneau-lieu span, .etiquette-lieu span { pointer-events: auto; cursor: help; }
+.panneau-lieu.fini span, .etiquette-lieu.fini span { background: linear-gradient(#2f8a4c, #1f6537); }
+.panneau-lieu.fini span::after, .etiquette-lieu.fini span::after { content: " ✔"; }
+.bulle .compte { display: grid; grid-template-columns: auto auto; gap: 1px 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.bulle .compte .reste { color: #c1441d; font-weight: 700; }
+.bulle .compte .vide { color: #1c8a3d; font-weight: 700; }
+
+/* ---------- Prototype : ordre des arènes ---------- */
+.liste .rang { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  background: rgba(255, 255, 255, 0.1); color: var(--doux); }
+.liste li.fait-chef .rang { background: var(--vert); color: #0c2a16; }
+.liste li.prochain { background: color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.liste li.prochain .rang { background: var(--accent); color: var(--sur-accent); }
+.liste .etiquette-prochain { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--accent); margin-left: 4px; }
+.liste .rival-tag { font-size: 10px; color: #ff4d6d; text-transform: uppercase; letter-spacing: .06em; margin-left: 4px; }
+
+/* ---------- Prototype : partage et sauvegarde ---------- */
+#bandeau-partage { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 1002;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 20px);
+  background: var(--panneau-plein); border: 2px solid var(--accent); border-radius: 12px; padding: 8px 12px; }
+.bouton-petit { border: 1px solid var(--bord); background: rgba(255, 255, 255, 0.08); color: var(--texte); border-radius: 8px;
+  padding: 5px 10px; font: inherit; cursor: pointer; }
+#lien-partage { width: 100%; height: 38px; border-radius: 9px; border: 1px solid var(--bord); background: rgba(0, 0, 0, 0.3);
+  color: var(--texte); padding: 0 10px; font: 13px ui-monospace, Consolas, monospace; }
+.ligne-boutons { display: flex; gap: 8px; margin-top: 8px; }
+.ligne-boutons > * { flex: 1; }
+.ligne-boutons form .bouton { margin: 4px 0; text-align: center; }
+#copier-lien { text-align: center; }
+body.lecture-seule path.leaflet-interactive { cursor: default; }
+
+/* ---------- Prototype : raccourcis ---------- */
+.raccourcis { border-collapse: collapse; font-size: 13px; }
+.raccourcis td { padding: 3px 12px 3px 0; }
+kbd { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--bord);
+  border-bottom-width: 2px; background: rgba(255, 255, 255, 0.07); font: 600 12px ui-monospace, Consolas, monospace; }
+dialog h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 14px 0 6px; }
+
+[hidden] { display: none !important; }

@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carte IronMON FR</title>
 <link rel="icon" href="images/icones/pokeball.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="lib/leaflet/leaflet.css">
 <link rel="stylesheet" href="carte.css">
 </head>
@@ -73,6 +70,15 @@
   </section>
 
   <section>
+    <h3>Ma progression</h3>
+    <button id="partager" class="bouton">🔗 Partager un lien de ma progression</button>
+    <button id="sauver" class="bouton">💾 Sauvegarder dans un fichier</button>
+    <button id="charger" class="bouton">📂 Charger un fichier de sauvegarde</button>
+    <input type="file" id="fichier-sauvegarde" accept=".json,application/json" hidden>
+    <p id="etat-sauvegarde" class="aide" hidden></p>
+  </section>
+
+  <section>
     <button id="nouvelle-run" class="bouton danger">🔄 Nouvelle run : tout décocher</button>
     <button id="ouvrir-aide" class="bouton">❓ Aide et crédits</button>
   </section>
@@ -87,6 +93,42 @@
     <p class="credit">Carte HGSS d'origine : « HGSS IronMON Map » de Kelsey Young (licence MIT). Pokémon © Nintendo / Creatures / Game Freak.</p>
   </div>
 </div>
+
+<!-- Légende -->
+<button id="btn-legende" class="pastille-flottante" aria-expanded="false">Légende</button>
+<div id="legende" hidden>
+  <div class="legende-tete"><strong>Légende</strong><span class="aide">Raccourci : L</span></div>
+  <ul>
+    <li><span class="cadre" style="--c:#ff9f1c"></span>Dresseur</li>
+    <li><span class="cadre" style="--c:#f4c542;border-width:3px"></span>Champion, Conseil 4, Maître <i>👑</i></li>
+    <li><span class="cadre" style="--c:#ff4d6d"></span>Rival <i>⚔️</i></li>
+    <li><span class="cadre" style="--c:#3fa9f5"></span>Objet <img src="images/icones/PokeballItem.png" alt=""></li>
+    <li><span class="cadre" style="--c:#b06cff"></span>CT <img src="images/icones/TMItem.png" alt=""></li>
+    <li><span class="cadre pointille" style="--c:#ffe14d"></span>Objet caché <img src="images/icones/HiddenItem.png" alt=""></li>
+    <li><span class="cadre" style="--c:#47c46b;background:rgba(71,196,107,.35)"></span>Déjà fait (battu ou ramassé) ✔</li>
+    <li><span class="symbole">⭐</span>À retenir (clic droit ou appui long)</li>
+    <li><span class="symbole">📌</span>Ta note</li>
+    <li><span class="cadre plein" style="--c:#4aa3df"></span>Passage ou porte : clic pour y aller</li>
+  </ul>
+  <p class="aide">Les icônes apparaissent quand on zoome. Survole un nom de lieu pour voir ce qu'il reste à y faire.</p>
+</div>
+
+<!-- Progression partagée (lecture seule) -->
+<div id="bandeau-partage" hidden>
+  <span>👀 Progression partagée : <b id="partage-info"></b> (lecture seule)</span>
+  <button id="quitter-partage" class="bouton-petit">Revenir à la mienne</button>
+</div>
+
+<dialog id="dialogue-partage">
+  <h2>Partager ma progression</h2>
+  <p>Ce lien ouvre la carte avec tes coches de <b id="partage-jeu"></b>. Ceux qui l'ouvrent voient ta progression sans rien modifier chez eux.</p>
+  <input id="lien-partage" type="text" readonly>
+  <div class="ligne-boutons">
+    <button id="copier-lien" class="bouton">📋 Copier le lien</button>
+    <form method="dialog"><button class="bouton">Fermer</button></form>
+  </div>
+  <p id="lien-copie" class="aide" hidden>Lien copié ✔</p>
+</dialog>
 
 <!-- Bandeau de position (surtout pour OBS) -->
 <div id="bandeau" hidden></div>
@@ -103,6 +145,18 @@
       (<code>http://localhost:8080/carte-ironmon/</code>), elle montre où tu es pendant la run.</li>
     <li><b>Pour OBS</b> : ajoute <code>?obs=1</code> à l'adresse (mini-carte qui suit ta position).</li>
   </ul>
+  <h3>Raccourcis clavier</h3>
+  <table class="raccourcis">
+    <tr><td><kbd>/</kbd></td><td>Chercher</td></tr>
+    <tr><td><kbd>1</kbd> <kbd>2</kbd></td><td>Changer de région</td></tr>
+    <tr><td><kbd>R</kbd></td><td>Recentrer sur ma position (ou le début de la région)</td></tr>
+    <tr><td><kbd>P</kbd></td><td>Ouvrir ou fermer le panneau</td></tr>
+    <tr><td><kbd>L</kbd></td><td>Afficher la légende</td></tr>
+    <tr><td><kbd>J</kbd></td><td>Changer de jeu</td></tr>
+    <tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>Zoomer, dézoomer</td></tr>
+    <tr><td><kbd>?</kbd></td><td>Cette aide</td></tr>
+    <tr><td><kbd>Échap</kbd></td><td>Fermer</td></tr>
+  </table>
   <p class="credit" id="credit"></p>
   <p class="credit">Noms français lus dans la version française du jeu. Pokémon © Nintendo / Creatures / Game Freak.</p>
   <form method="dialog"><button class="bouton">Fermer</button></form>
