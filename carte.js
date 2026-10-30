@@ -587,12 +587,25 @@ const JEU_DU_TRACKER = (j) => {
   return null;
 };
 let dernierNomLieu = null, derniereRun = null, trackerOk = null;
+// La position vient soit du serveur du stream (carte ouverte en localhost), soit d'un fichier choisi par le joueur
+// avec « Relier mon jeu » (script BizHawk suivi/carte-ironmon-fr.lua) : le navigateur relit ce fichier lui-même.
+let fichierSuivi = null, dateFichier = 0;
+async function lireSource() {
+  if (fichierSuivi) {
+    const f = await fichierSuivi.getFile();
+    if (f.lastModified === dateFichier) return null;
+    dateFichier = f.lastModified;
+    return JSON.parse(await f.text());
+  }
+  const r = await fetch("../tracker-twitch.json?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
 async function lireTracker() {
   try {
-    const r = await fetch("../tracker-twitch.json?t=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    if (trackerOk !== true) $("etat-tracker").textContent = "Tracker connecté ✔";
+    const d = await lireSource();
+    if (!d) return;
+    if (trackerOk !== true) $("etat-tracker").textContent = fichierSuivi ? "Jeu relié ✔" : "Tracker connecté ✔";
     trackerOk = true;
     // Le jeu du tracker, sauf si on a choisi un autre jeu soi-même (menu ou ?jeu= dans l'adresse)
     const jid = JEU_DU_TRACKER(d.jeu);
@@ -605,7 +618,7 @@ async function lireTracker() {
     if (d.lieu && d.lieu !== dernierNomLieu) {
       dernierNomLieu = d.lieu;
       const l = trouverLieu(d.lieu);
-      $("etat-tracker").textContent = "Tracker connecté ✔ — " + (l ? l.nom : d.lieu);
+      $("etat-tracker").textContent = (fichierSuivi ? "Jeu relié ✔ — " : "Tracker connecté ✔ — ") + (l ? l.nom : d.lieu);
       if (l) {
         lieuActuel = l;
         if ((reglages.suivre || OBS) && l.region !== regionId) changerRegion(l.region);
@@ -616,6 +629,15 @@ async function lireTracker() {
       $("bandeau").hidden = !OBS;
     }
   } catch (e) {
+    if (fichierSuivi) {
+      // Fichier en cours d'écriture par le script (lecture coupée) : on réessaie au tour suivant
+      if (e instanceof SyntaxError) return;
+      $("etat-tracker").textContent = "Le fichier de suivi n'est plus lisible : clique « Relier mon jeu » pour le rechoisir.";
+      fichierSuivi = null;
+      $("relier").hidden = false;
+      trackerOk = false;
+      return;
+    }
     if (trackerOk !== false) {
       $("etat-tracker").textContent = location.protocol === "file:"
         ? "Ouvre la carte via ton serveur (http://localhost:8080/carte-ironmon/) pour la relier au tracker."
@@ -801,12 +823,62 @@ function ouvrirAccueil() {
 $("btn-jeu").onclick = ouvrirAccueil;
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("accueil").hidden) $("accueil").hidden = true; });
 
-// Le tracker n'est lisible que sur le PC du stream : la version en ligne ne le cherche pas
+// Le fichier de suivi choisi est gardé (IndexedDB) pour ne pas le rechoisir à chaque visite
+function baseSuivi(mode, faire) {
+  return new Promise((ok, ko) => {
+    const o = indexedDB.open("carte-ironmon", 1);
+    o.onupgradeneeded = () => o.result.createObjectStore("suivi");
+    o.onerror = () => ko(o.error);
+    o.onsuccess = () => {
+      const t = o.result.transaction("suivi", mode), r = faire(t.objectStore("suivi"));
+      t.oncomplete = () => ok(r.result);
+      t.onerror = () => ko(t.error);
+    };
+  });
+}
+let suiviLance = false;
+function suivreFichier(h) {
+  fichierSuivi = h;
+  dateFichier = 0;
+  trackerOk = dernierNomLieu = null;
+  $("relier").hidden = true;
+  $("suivre").disabled = false;
+  $("etat-tracker").textContent = "Jeu relié ✔ — en attente de ton premier changement de lieu…";
+  lireTracker();
+  if (!suiviLance) setInterval(lireTracker, 2000);
+  suiviLance = true;
+}
+let fichierGarde = null;
+async function relierJeu() {
+  try {
+    // Fichier déjà choisi lors d'une visite précédente : le navigateur redemande juste la permission
+    if (fichierGarde && await fichierGarde.requestPermission({ mode: "read" }) === "granted") return suivreFichier(fichierGarde);
+    const [h] = await window.showOpenFilePicker({ types: [{ description: "Suivi IronMON", accept: { "application/json": [".json"] } }] });
+    try { await baseSuivi("readwrite", (s) => s.put(h, "fichier")); } catch (e) { /* le suivi marche quand même */ }
+    suivreFichier(h);
+  } catch (e) {
+    if (e.name !== "AbortError") $("etat-tracker").textContent = "Impossible de lire ce fichier : " + e.message;
+  }
+}
+
+// En ligne, la carte ne peut pas lire le tracker du stream : le joueur relie son propre jeu (script BizHawk)
 const EN_LIGNE = !/^(localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname) && location.protocol !== "file:";
 if (EN_LIGNE) {
-  $("etat-tracker").textContent = "Le suivi de ta position marche avec la carte ouverte sur ton PC pendant le stream "
-    + "(http://localhost:8080/carte-ironmon/). Ici, tout le reste fonctionne : coches, notes, recherche.";
   $("suivre").disabled = $("auto-reset").disabled = true;
+  if ("showOpenFilePicker" in window && !OBS) {
+    $("etat-tracker").textContent = "Fais suivre ta partie à la carte : elle saute toute seule au lieu où tu es.";
+    $("relier").hidden = false;
+    $("btn-relier").onclick = relierJeu;
+    baseSuivi("readonly", (s) => s.get("fichier")).then(async (h) => {
+      if (!h) return;
+      fichierGarde = h;
+      if (await h.queryPermission({ mode: "read" }) === "granted") suivreFichier(h);
+      else $("btn-relier").textContent = "🎮 Reprendre le suivi de mon jeu";
+    }).catch(() => {});
+  } else {
+    $("etat-tracker").textContent = "Pour que la carte suive ta partie, ouvre-la dans Chrome ou Edge sur ordinateur. "
+      + "Ici, tout le reste fonctionne : coches, notes, recherche.";
+  }
   // En ligne, on arrive sur le choix du jeu (sauf lien direct ?jeu=…)
   if (!OBS && !params.has("jeu")) ouvrirAccueil();
 } else {
