@@ -16,11 +16,11 @@ const boite = (x, y, w, h) => L.latLngBounds(ll(x, y), ll(x + w, y + h));
 
 // Clé de comparaison des lieux (même règle que outils/fabriquer_hgss.py) et des recherches
 function cle(s) {
-  s = String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/'/g, "");
+  s = String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/'/g, "");
   s = s.replace(/\brt\b/g, "route").replace(/\b(city|town|island)\b/g, "");
   return s.replace(/[^a-z0-9]/g, "");
 }
-const sansAccent = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/['’\-]/g, " ");
+const sansAccent = (s) => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/['’\-]/g, " ");
 const echap = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 // Lieux que le tracker nomme autrement que la carte
@@ -58,7 +58,13 @@ const map = L.map("carte", {
 if (OBS) document.body.classList.add("obs");
 else L.control.zoom({ position: "bottomright", zoomInTitle: "Zoomer", zoomOutTitle: "Dézoomer" }).addTo(map);
 
-let jeuId = params.get("jeu") || localStorage.getItem("carte-ironmon-jeu") || "hgss";
+// Le niveau de zoom, pour que le style montre ou cache icônes et panneaux
+const majZoom = () => { $("carte").dataset.zoom = Math.floor(map.getZoom()); };
+map.on("zoomend", majZoom);
+
+let jeuId = params.get("jeu");
+try { jeuId = jeuId || localStorage.getItem("carte-ironmon-jeu"); } catch (e) { /* stockage bloqué */ }
+jeuId = jeuId || "hgss";
 if (!JEUX[jeuId]) jeuId = Object.keys(JEUX)[0];
 let jeu, regionId, region, etat;
 let fondCarte, couches = {}, entites = [], lieuxIndex = {}, ici = null, lieuActuel = null;
@@ -71,6 +77,9 @@ function changerJeu(id) {
   etat = memoire.lire(id);
   try { localStorage.setItem("carte-ironmon-jeu", id); } catch (e) {}
   $("choix-jeu").value = id;
+  document.body.dataset.jeu = id;
+  $("btn-jeu").querySelector(".nom-long").textContent = jeu.nom;
+  $("btn-jeu").querySelector(".nom-court").textContent = jeu.court || jeu.nom;
   $("credit").textContent = jeu.credit || "";
   // Index des lieux de toutes les régions (noms anglais du tracker et noms français)
   lieuxIndex = {};
@@ -103,14 +112,19 @@ function changerRegion(rid, vue) {
   for (const b of $("regions").children) b.classList.toggle("actif", b.dataset.region === rid);
   if (fondCarte) map.removeLayer(fondCarte);
   const limites = L.latLngBounds(ll(0, 0), ll(region.largeur, region.hauteur));
-  fondCarte = L.tileLayer(region.tuiles + "/{z}/{x}_{y}.webp", {
+  // La version artefact (outils/demo.js) remplace les tuiles par quelques grandes images
+  fondCarte = (window.FOND_CARTE ? window.FOND_CARTE(region) : L.tileLayer(region.tuiles + "/{z}/{x}_{y}.webp", {
     minZoom: 1, maxZoom: 8, minNativeZoom: 1, maxNativeZoom: NATIF, tileSize: 256, noWrap: true,
     bounds: limites, errorTileUrl: VIDE, keepBuffer: 3,
-  }).addTo(map);
+  })).addTo(map);
   map.setMaxBounds(limites.pad(0.25));
   const v = vue || etat.vues[rid];
   if (v) map.setView(v.c, v.z, { animate: false });
   else map.setView(ll(region.depart[0], region.depart[1]), 4, { animate: false });
+  // Petit fondu des tuiles à chaque changement de région
+  $("carte").classList.remove("fondu");
+  void $("carte").offsetWidth;
+  $("carte").classList.add("fondu");
   construire();
   if (ici && lieuActuel) placerIci(lieuActuel);
 }
@@ -146,12 +160,27 @@ function visible(e) {
   return { objet: reglages.objets, ct: reglages.ct, cache: reglages.caches }[e.o.type];
 }
 
-function decor(e) {
-  // La coche et l'étoile posées sur l'élément
+// Petite icône posée au coin de chaque repère (visible de près)
+function badge(e) {
+  if (e.genre === "dresseur") {
+    if (e.d.chef) return "<i>👑</i>";
+    if (e.d.rival) return "<i>⚔️</i>";
+    return '<img src="images/icones/dresseur.png" alt="">';
+  }
+  return `<img src="images/icones/${{ objet: "PokeballItem", ct: "TMItem", cache: "HiddenItem" }[e.o.type]}.png" alt="">`;
+}
+
+function decor(e, anime) {
+  // L'icône, la coche et l'étoile posées sur l'élément
   for (const m of e.decor || []) couches.decor.removeLayer(m);
   e.decor = [];
   if (!visible(e)) return;
   const b = e.rect.getBounds();
+  const pop = anime ? " pop" : "";
+  if (!jeu.sansSprites) {
+    e.decor.push(L.marker(b.getNorthWest(), { interactive: false, keyboard: false,
+      icon: L.divIcon({ className: "badge" + (etat.fait[e.cle] ? " fait" : ""), html: badge(e), iconSize: [14, 14], iconAnchor: [9, 9] }) }));
+  }
   // Cartes rendues sans personnages ni Poké Balls (Platine) : une icône dans chaque cadre
   if (jeu.sansSprites) {
     const img = e.genre === "dresseur" ? "dresseur" : { objet: "PokeballItem", ct: "TMItem", cache: "HiddenItem" }[e.o.type];
@@ -160,11 +189,11 @@ function decor(e) {
   }
   if (etat.fait[e.cle]) {
     e.decor.push(L.marker(b.getCenter(), { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "", html: '<div class="coche-icone">✔</div>', iconSize: [16, 16], iconAnchor: [6, 9] }) }));
+      icon: L.divIcon({ className: "", html: `<div class="coche-icone${pop}">✔</div>`, iconSize: [16, 16], iconAnchor: [6, 9] }) }));
   }
   if (etat.etoile[e.cle]) {
     e.decor.push(L.marker(b.getNorthEast(), { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "", html: '<div class="etoile-icone">⭐</div>', iconSize: [16, 16], iconAnchor: [4, 12] }) }));
+      icon: L.divIcon({ className: "", html: `<div class="etoile-icone${pop}">⭐</div>`, iconSize: [16, 16], iconAnchor: [4, 12] }) }));
   }
   for (const m of e.decor) couches.decor.addLayer(m);
 }
@@ -224,10 +253,24 @@ function construire() {
     couches.passages.addLayer(r);
   }
 
-  // Noms des lieux posés sur la carte (les intérieurs de Platine)
+  // Noms des lieux posés sur la carte (les intérieurs)
   for (const e of region.etiquettes || []) {
     couches.etiquettes.addLayer(L.marker(ll(e.x, e.y), { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "etiquette-lieu", html: echap(e.texte), iconSize: null, iconAnchor: [0, 0] }) }));
+      icon: L.divIcon({ className: "etiquette-lieu", html: `<span>${echap(e.texte)}</span>`, iconSize: null, iconAnchor: [0, 0] }) }));
+  }
+  // Sur l'extérieur, un panneau par ville et par route (pas les étages ni les intérieurs)
+  if (!(region.etiquettes || []).length) {
+    const vus = new Set();
+    for (const l of Object.values(region.lieux)) {
+      if (vus.has(l.nom) || l.nom.includes("—")) continue;
+      vus.add(l.nom);
+      // Les villes se voient de loin ; routes, arènes, grottes… seulement de plus près
+      const route = /^Route\b/.test(l.nom);
+      const detail = route || /^(Arène|Sous-sol|Accès|Tour|Phare|Centre|Repaire|Ruines|Puits|Caves?|Grotte|Mont|Bois|Parc|Chemin|Lac|Labo|Maison|Zone|Pont|Château|Cave|Usine|Musée|Cascade|Forêt|Gouffre|Désert|Égouts|Bâtiment|Manoir|Mine)\b/i.test(l.nom)
+        || /Pokéathlon|Safari|Sauvage|Ligue/i.test(l.nom);
+      couches.etiquettes.addLayer(L.marker(ll(l.x, l.y), { interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "panneau-lieu" + (route ? " route" : "") + (detail ? " detail" : ""), html: `<span>${echap(l.nom)}</span>`, iconSize: null, iconAnchor: [0, 0] }) }));
+    }
   }
 
   for (const [img, x, y, w, h] of region.itineraires || []) {
@@ -265,7 +308,7 @@ function basculer(e, quoi) {
   e.rect.setStyle(styleEntite(e));
   if (e.rect.isTooltipOpen()) e.rect.setTooltipContent(e.genre === "dresseur" ? bulleDresseur(e.d, e.cle) : bulleObjet(e.o, e.cle));
   if (!visible(e)) couches.entites.removeLayer(e.rect);
-  decor(e);
+  decor(e, true);
   majPanneau();
 }
 
@@ -329,7 +372,10 @@ function majPanneau() {
   const n = (l) => l.filter((e) => etat.fait[e.cle]).length;
   const ligne = (titre, a, b) => `<div class="prog-ligne"><span>${titre}</span><span>${a} / ${b}</span></div>`
     + `<div class="barre-prog"><div style="width:${b ? (100 * a) / b : 0}%"></div></div>`;
+  const pct = ds.length + os.length ? Math.round((100 * (n(ds) + n(os))) / (ds.length + os.length)) : 0;
   $("progression").innerHTML = `<h3>Progression — ${echap(region.nom)}</h3>`
+    + `<div class="prog-tete"><div class="ball${pct === 100 ? " pleine" : ""}" style="--p:${pct}%"></div>`
+    + `<div><div class="pct">${pct} %</div><small>de la région faite</small></div></div>`
     + ligne("Dresseurs battus", n(ds), ds.length) + ligne("Objets ramassés", n(os), os.length);
 
   const chefs = $("liste-chefs");
@@ -450,7 +496,7 @@ function placerIci(l) {
   ici = null;
   if (!l || l.region !== regionId) return;
   ici = L.marker(ll(l.x, l.y), { interactive: false, keyboard: false, zIndexOffset: 1000,
-    icon: L.divIcon({ className: "ici", html: `<div class="onde"></div><div class="point"></div><div class="nom">${echap(l.nom)}</div>`, iconSize: [0, 0] }) }).addTo(map);
+    icon: L.divIcon({ className: "ici", html: `<div class="onde"></div><div class="onde deux"></div><div class="ombre"></div><div class="epingle"></div><div class="nom">${echap(l.nom)}</div>`, iconSize: [0, 0] }) }).addTo(map);
 }
 const JEU_DU_TRACKER = (j) => {
   const n = `${j?.nom || ""} ${j?.badges || ""}`;
@@ -548,12 +594,49 @@ let jeuChoisi = params.has("jeu");
 $("choix-jeu").onchange = (ev) => { jeuChoisi = true; changerJeu(ev.target.value); index = []; };
 
 changerJeu(jeuId);
+majZoom();
+
+// ---------- Écran d'accueil : une grande carte illustrée par jeu ----------
+function ouvrirAccueil() {
+  const boite = $("cartes-jeux");
+  boite.innerHTML = "";
+  for (const [id, nom] of TOUS_LES_JEUX) {
+    const j = JEUX[id];
+    if (!j) continue;
+    const [rid, r] = Object.entries(j.regions)[0];
+    // La tuile (zoom 4) de la première ville du jeu sert d'illustration
+    const z = 4, f = 2 ** (NATIF - z) * 256;
+    const l = Object.values(r.lieux)[0] || { x: r.depart[0], y: r.depart[1] };
+    const tuile = `${r.tuiles}/${z}/${Math.floor(l.x / f)}_${Math.floor(l.y / f)}.webp`;
+    let nd = 0, no = 0;
+    for (const rr of Object.values(j.regions)) { nd += rr.dresseurs.length; no += rr.objets.length; }
+    const b = document.createElement("button");
+    b.className = "carte-jeu";
+    b.dataset.jeu = id;
+    b.innerHTML = `<div class="vue" style="background-image:url('${tuile}')"></div><div class="voile"></div>`
+      + (id === jeuId ? '<span class="dernier">Dernier ouvert</span>' : "")
+      + `<div class="infos"><div class="titre">${echap(nom)}</div><span class="bande"></span>`
+      + `<div class="details">${Object.values(j.regions).map((x) => echap(x.nom)).join(" · ")}<br>${nd} dresseurs · ${no} objets</div></div>`;
+    b.onclick = () => {
+      $("accueil").hidden = true;
+      jeuChoisi = true;
+      if (id !== jeuId) { changerJeu(id); index = []; }
+    };
+    boite.appendChild(b);
+  }
+  $("accueil").hidden = false;
+}
+$("btn-jeu").onclick = ouvrirAccueil;
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("accueil").hidden) $("accueil").hidden = true; });
+
 // Le tracker n'est lisible que sur le PC du stream : la version en ligne ne le cherche pas
 const EN_LIGNE = !/^(localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname) && location.protocol !== "file:";
 if (EN_LIGNE) {
   $("etat-tracker").textContent = "Le suivi de ta position marche avec la carte ouverte sur ton PC pendant le stream "
     + "(http://localhost:8080/carte-ironmon/). Ici, tout le reste fonctionne : coches, notes, recherche.";
   $("suivre").disabled = $("auto-reset").disabled = true;
+  // En ligne, on arrive sur le choix du jeu (sauf lien direct ?jeu=…)
+  if (!OBS && !params.has("jeu")) ouvrirAccueil();
 } else {
   lireTracker();
   setInterval(lireTracker, 3000);

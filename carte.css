@@ -1,115 +1,229 @@
 :root {
   --fond: #12141c;
-  --panneau: rgba(22, 25, 35, 0.94);
+  --panneau: rgba(20, 23, 33, 0.78);
+  --panneau-plein: rgba(20, 23, 33, 0.96);
   --texte: #eef0f6;
   --doux: #a6adbf;
   --accent: #e0604a;
+  --sur-accent: #fff;
+  --accent2: #f4c542;
+  --mer: #0b1f38;
+  --mer2: #06111f;
   --or: #f4c542;
   --vert: #47c46b;
-  --bord: rgba(255, 255, 255, 0.12);
+  --bord: rgba(255, 255, 255, 0.14);
+  --pixel: "Pixelify Sans", "Segoe UI", system-ui, sans-serif;
   color-scheme: dark;
 }
+/* ---------- Une couleur par jeu ---------- */
+body[data-jeu="hgss"] { --accent: #d9a62e; --sur-accent: #1b1405; --accent2: #c9d2e0; --mer: #0c2442; --mer2: #061428; }
+body[data-jeu="platine"] { --accent: #8f7bd8; --sur-accent: #fff; --accent2: #cfd3de; --mer: #1b1d36; --mer2: #0d0e1e; }
+body[data-jeu="noire"] { --accent: #f1f1f1; --sur-accent: #111; --accent2: #6b6b6b; --mer: #1a1a1d; --mer2: #08080a; }
+body[data-jeu="noire2"] { --accent: #3fa7e6; --sur-accent: #fff; --accent2: #e8f4fb; --mer: #0b2233; --mer2: #04101a; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--fond); color: var(--texte);
   font: 14px/1.4 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
-#carte { position: fixed; inset: 0; background: #000; }
-.leaflet-container { background: #000; font: inherit; }
+#carte { position: fixed; inset: 0; }
+/* Fond autour des régions : une mer qui ondule doucement */
+.leaflet-container { font: inherit;
+  background:
+    radial-gradient(ellipse 14px 3px at 50% 50%, rgba(255, 255, 255, 0.09), transparent 70%) 0 0 / 64px 40px,
+    radial-gradient(ellipse 10px 2px at 50% 50%, rgba(255, 255, 255, 0.06), transparent 70%) 32px 20px / 64px 40px,
+    radial-gradient(ellipse at 50% 40%, var(--mer), var(--mer2) 80%);
+  animation: houle 14s linear infinite; transition: background-color .4s; }
+@keyframes houle { to { background-position: 64px 40px, -32px 60px, 0 0; } }
 /* Pixel art net quand on zoome au-delà de la taille réelle */
-.leaflet-tile, .itineraire, .icone-carte { image-rendering: pixelated; }
+.leaflet-tile, .itineraire, .icone-carte, .badge img { image-rendering: pixelated; }
+/* Fondu en changeant de région */
+#carte.fondu .leaflet-tile-pane { animation: fondu .45s ease-out; }
+@keyframes fondu { from { opacity: 0; filter: blur(3px); } }
 
 /* ---------- Barre du haut ---------- */
 #barre { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 1000; display: flex; gap: 8px;
   align-items: flex-start; flex-wrap: wrap; pointer-events: none; }
 #barre > * { pointer-events: auto; }
+.verre { background: var(--panneau); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
 .rond { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau);
-  color: var(--texte); font-size: 18px; cursor: pointer; }
+  backdrop-filter: blur(14px); color: var(--texte); font-size: 18px; cursor: pointer; }
 .rond.petit { width: 30px; height: 30px; font-size: 14px; }
-select, input[type=search] { height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau);
-  color: var(--texte); padding: 0 12px; font: inherit; }
-.groupe { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--bord); }
+#choix-jeu { display: none; }
+#btn-jeu { height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau); backdrop-filter: blur(14px);
+  color: var(--texte); padding: 0 12px 0 10px; font: 600 15px var(--pixel); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+#btn-jeu .pastille { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--accent2); }
+#btn-jeu:hover { border-color: var(--accent); }
+#btn-jeu .nom-court { display: none; }
+input[type=search] { height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau);
+  backdrop-filter: blur(14px); color: var(--texte); padding: 0 12px; font: inherit; }
+input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.groupe { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--bord); backdrop-filter: blur(14px); }
 .groupe button { height: 38px; padding: 0 14px; border: 0; background: var(--panneau); color: var(--texte);
-  font-weight: 600; cursor: pointer; letter-spacing: .03em; }
-.groupe button.actif { background: var(--accent); }
+  font: 600 15px var(--pixel); cursor: pointer; letter-spacing: .04em; transition: background .2s, color .2s; }
+.groupe button.actif { background: var(--accent); color: var(--sur-accent); }
 #zone-recherche { position: relative; flex: 1 1 260px; max-width: 420px; }
 #recherche { width: 100%; }
 #resultats { position: absolute; top: 44px; left: 0; right: 0; margin: 0; padding: 4px; list-style: none;
-  background: var(--panneau); border: 1px solid var(--bord); border-radius: 10px; max-height: 60vh; overflow: auto; }
+  background: var(--panneau-plein); border: 1px solid var(--bord); border-radius: 10px; max-height: 60vh; overflow: auto; }
 #resultats li { padding: 7px 10px; border-radius: 7px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
 #resultats li:hover, #resultats li.choisi { background: rgba(255, 255, 255, 0.08); }
 #resultats .type { font-size: 11px; color: var(--doux); min-width: 64px; text-transform: uppercase; }
 #resultats .sous { color: var(--doux); font-size: 12px; margin-left: auto; text-align: right; }
 
-/* ---------- Panneau ---------- */
+/* ---------- Panneau (verre flouté) ---------- */
 #panneau { position: fixed; top: 60px; left: 10px; bottom: 10px; width: 300px; z-index: 1001; background: var(--panneau);
-  border: 1px solid var(--bord); border-radius: 14px; overflow: auto; padding: 12px 14px; transition: transform .2s; }
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--bord); border-radius: 14px; overflow: auto; padding: 12px 14px; transition: transform .25s ease;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
 #panneau.ferme { transform: translateX(calc(-100% - 20px)); }
 .panneau-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.panneau-tete strong { font: 700 18px var(--pixel); }
 #panneau section { border-top: 1px solid var(--bord); padding: 10px 0; }
-#panneau h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--doux); }
+#panneau h3 { margin: 0 0 6px; font: 600 13px var(--pixel); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
 #panneau label { display: block; padding: 3px 0; cursor: pointer; }
+#panneau input[type=checkbox], #panneau input[type=radio] { accent-color: var(--accent); }
 #panneau .sous { padding-left: 22px; color: var(--doux); font-size: 13px; }
 #panneau .sous label { display: inline-block; margin-right: 6px; }
 .aide { margin: 0 0 6px; color: var(--doux); font-size: 12px; }
 .bouton { display: block; width: 100%; margin: 4px 0; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--bord);
-  background: rgba(255, 255, 255, 0.06); color: var(--texte); font: inherit; cursor: pointer; text-align: left; }
+  background: rgba(255, 255, 255, 0.06); color: var(--texte); font: inherit; cursor: pointer; text-align: left; transition: background .15s; }
 .bouton:hover { background: rgba(255, 255, 255, 0.12); }
 .bouton.danger { border-color: rgba(224, 96, 74, 0.5); }
 .liste { list-style: none; margin: 0; padding: 0; }
 .liste li { display: flex; gap: 6px; align-items: center; padding: 5px 6px; border-radius: 7px; cursor: pointer; }
 .liste li:hover { background: rgba(255, 255, 255, 0.07); }
-.liste .niv { margin-left: auto; color: var(--or); font-weight: 700; font-variant-numeric: tabular-nums; }
+.liste .niv { margin-left: auto; color: var(--or); font: 700 15px var(--pixel); font-variant-numeric: tabular-nums; }
 .liste .fait { color: var(--vert); }
 .liste .suppr { margin-left: auto; background: none; border: 0; color: var(--doux); cursor: pointer; font-size: 15px; }
 .barre-prog { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin: 3px 0 8px; }
-.barre-prog > div { height: 100%; background: var(--vert); }
+.barre-prog > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--vert)); border-radius: 4px; transition: width .4s; }
 .prog-ligne { display: flex; justify-content: space-between; font-size: 13px; }
+/* Poké Ball qui se remplit avec la progression */
+.prog-tete { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
+.prog-tete .pct { font: 700 26px/1 var(--pixel); }
+.prog-tete small { color: var(--doux); }
+.ball { --p: 0%; position: relative; width: 54px; height: 54px; flex: none; border-radius: 50%;
+  background: conic-gradient(#e3412f var(--p), rgba(255, 255, 255, 0.13) 0);
+  box-shadow: inset 0 0 0 3px #15161c, 0 2px 8px rgba(0, 0, 0, 0.4); transition: --p .6s; }
+.ball::before { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 3px); height: 6px; background: #15161c; }
+.ball::after { content: ""; position: absolute; left: calc(50% - 9px); top: calc(50% - 9px); width: 18px; height: 18px;
+  border-radius: 50%; background: #f4f4f4; box-shadow: 0 0 0 4px #15161c; }
+.ball.pleine { animation: brille 1.6s ease-in-out infinite; }
+@keyframes brille { 50% { box-shadow: inset 0 0 0 3px #15161c, 0 0 18px var(--or); } }
 
-/* ---------- Bulles d'info ---------- */
-.leaflet-tooltip.bulle { background: rgba(14, 16, 24, 0.95); color: var(--texte); border: 1px solid var(--bord);
-  border-radius: 9px; padding: 7px 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); font-size: 13px; }
+/* ---------- Bulles d'info, façon boîte de dialogue DS ---------- */
+.leaflet-tooltip.bulle { background: #fbfbf4; color: #2a2a2a; border: 3px solid #4d6080; border-radius: 9px;
+  padding: 7px 11px; font-size: 13px;
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #b9c3d4, 0 6px 18px rgba(0, 0, 0, 0.5); }
 .leaflet-tooltip.bulle::before { display: none; }
-.bulle b { font-size: 14px; }
-.bulle .l { color: var(--doux); font-size: 12px; }
-.bulle .niv { color: var(--or); font-weight: 700; }
-.bulle .ok { color: var(--vert); }
+.bulle b { font: 700 16px var(--pixel); color: #1d2a44; }
+.bulle .l { color: #5d6575; font-size: 12px; }
+.bulle .niv { color: #c1441d; font-weight: 800; }
+.bulle .ok { color: #1c8a3d; font-weight: 700; }
 .etiquette-passage { background: none; border: 0; box-shadow: none; color: #fff; font-weight: 800; font-size: 11px;
   text-shadow: 0 0 3px #000, 0 0 3px #000; padding: 0; }
 .etiquette-passage::before { display: none; }
-.etiquette-lieu { white-space: nowrap; color: #fff; font-weight: 800; font-size: 14px; letter-spacing: .02em;
-  text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 2px #000; pointer-events: none; }
 
-/* ---------- Marqueurs ---------- */
-.ici { position: relative; }
-.ici .point { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 10px rgba(0, 0, 0, 0.6); }
-.ici .onde { position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%;
-  border: 3px solid var(--accent); animation: onde 1.6s ease-out infinite; }
-@keyframes onde { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
-.ici .nom { position: absolute; left: 14px; top: -12px; white-space: nowrap; background: var(--accent); color: #fff;
-  font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+/* ---------- Noms de lieux en panneaux ---------- */
+.etiquette-lieu { white-space: nowrap; pointer-events: none; }
+.etiquette-lieu span, .panneau-lieu span { display: inline-block; font: 600 14px var(--pixel); color: #fff; letter-spacing: .02em;
+  background: linear-gradient(#3d5b8c, #2a4069); border: 2px solid #dfe8f7; border-radius: 6px; padding: 1px 8px 2px;
+  box-shadow: 0 0 0 2px #1a2742, 0 3px 6px rgba(0, 0, 0, 0.5); }
+.panneau-lieu { pointer-events: none; white-space: nowrap; }
+.panneau-lieu span { transform: translate(-50%, -50%); }
+.panneau-lieu.route span { font-size: 12px; background: linear-gradient(#7a5a34, #5a4024); border-color: #f0dcb8; box-shadow: 0 0 0 2px #3a2914, 0 3px 6px rgba(0, 0, 0, 0.5); }
+/* Villes : zoom 2 à 4 ; routes, arènes, grottes… : zoom 4 seulement (sinon trop chargé) */
+#carte:not([data-zoom="2"]):not([data-zoom="3"]):not([data-zoom="4"]) .panneau-lieu,
+#carte:not([data-zoom="4"]) .panneau-lieu.detail { display: none; }
+
+/* ---------- Repères : icônes et coches ---------- */
+.badge { pointer-events: none; }
+.badge img, .badge i { display: block; width: 14px; height: 14px; filter: drop-shadow(0 1px 1px #000) drop-shadow(0 0 1px #000); }
+.badge i { font-style: normal; font-size: 12px; line-height: 14px; text-align: center; }
+.badge.fait { opacity: .45; }
+#carte:not([data-zoom="5"]):not([data-zoom="6"]):not([data-zoom="7"]):not([data-zoom="8"]) .badge { display: none; }
 .note-icone { font-size: 22px; line-height: 1; filter: drop-shadow(0 1px 2px #000); }
 .etoile-icone { font-size: 16px; line-height: 1; filter: drop-shadow(0 0 2px #000); pointer-events: none; }
 .coche-icone { color: var(--vert); font-weight: 900; font-size: 16px; line-height: 1;
   text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+.coche-icone.pop, .etoile-icone.pop { animation: pop .45s cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes pop { from { transform: scale(0) rotate(-30deg); opacity: 0; } 60% { transform: scale(1.6); } }
 .eclair { animation: eclair 0.5s ease-in-out 4; }
 @keyframes eclair { 50% { stroke-width: 8; stroke-opacity: 0.2; } }
+path.leaflet-interactive { transition: fill-opacity .2s, stroke-width .2s; }
+path.leaflet-interactive:hover { stroke-width: 4; fill-opacity: .35; }
+
+/* ---------- « Tu es ici » : épingle Poké Ball qui sautille ---------- */
+.ici { position: relative; }
+.ici .onde { position: absolute; left: -32px; top: -32px; width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid var(--accent); animation: onde 1.8s ease-out infinite; }
+.ici .onde.deux { animation-delay: .9s; }
+@keyframes onde { from { transform: scale(.25); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+.ici .epingle { position: absolute; left: -13px; top: -40px; width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(#e3412f 0 46%, #15161c 46% 56%, #f4f4f4 56%); border: 2px solid #15161c;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6); animation: saut 1.2s ease-in-out infinite; }
+.ici .epingle::after { content: ""; position: absolute; left: 7px; top: 7px; width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; border: 2px solid #15161c; }
+.ici .ombre { position: absolute; left: -8px; top: -3px; width: 16px; height: 6px; border-radius: 50%; background: rgba(0, 0, 0, 0.45);
+  animation: ombre 1.2s ease-in-out infinite; }
+@keyframes saut { 50% { transform: translateY(-8px); } }
+@keyframes ombre { 50% { transform: scale(.65); opacity: .6; } }
+.ici .nom { position: absolute; left: 18px; top: -38px; white-space: nowrap; background: var(--accent); color: var(--sur-accent);
+  font: 700 14px var(--pixel); padding: 2px 9px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5); }
 
 #bandeau { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 1000;
-  background: var(--panneau); border: 1px solid var(--bord); border-radius: 10px; padding: 6px 14px; font-weight: 700; }
+  background: var(--panneau-plein); border: 2px solid var(--accent); border-radius: 10px; padding: 6px 14px; font: 700 16px var(--pixel); }
 #mode-note { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 1002; background: var(--accent);
-  color: #fff; padding: 8px 14px; border-radius: 10px; font-weight: 600; }
+  color: var(--sur-accent); padding: 8px 14px; border-radius: 10px; font-weight: 600; }
 #mode-note button { margin-left: 8px; }
-dialog { background: var(--panneau); color: var(--texte); border: 1px solid var(--bord); border-radius: 14px;
+dialog { background: var(--panneau-plein); color: var(--texte); border: 1px solid var(--bord); border-radius: 14px;
   max-width: 560px; }
-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+dialog h2 { font: 700 24px var(--pixel); color: var(--accent); margin-top: 4px; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
 dialog li { margin: 6px 0; }
 .credit { color: var(--doux); font-size: 12px; }
-.leaflet-control-zoom a { background: var(--panneau) !important; color: var(--texte) !important;
+.leaflet-control-zoom { border: 0 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important; border-radius: 10px !important; overflow: hidden; }
+.leaflet-control-zoom a { background: var(--panneau) !important; color: var(--texte) !important; backdrop-filter: blur(14px);
   border-color: var(--bord) !important; }
 
+/* ---------- Écran d'accueil : choisir son jeu ---------- */
+#accueil { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(30, 36, 60, 0.82), rgba(5, 6, 12, 0.94));
+  backdrop-filter: blur(6px); overflow: auto; animation: apparait .35s ease-out; }
+#accueil[hidden] { display: none; }
+@keyframes apparait { from { opacity: 0; } }
+.accueil-boite { width: min(980px, 100%); text-align: center; margin: auto; }
+.accueil-boite h1 { font: 700 clamp(30px, 6vw, 52px)/1.1 var(--pixel); margin: 0 0 4px; letter-spacing: .02em;
+  background: linear-gradient(90deg, #f4c542, #e3412f, #8f7bd8, #3fa7e6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.accueil-boite > p { color: var(--doux); margin: 0 0 22px; font-size: 15px; }
+#cartes-jeux { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.carte-jeu { --accent: #fff; position: relative; height: 220px; border-radius: 16px; overflow: hidden; cursor: pointer; border: 0; padding: 0;
+  background: #000; color: #fff; text-align: left; font: inherit; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform .2s, box-shadow .2s; }
+.carte-jeu:hover, .carte-jeu:focus-visible { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 0 3px var(--accent), 0 16px 40px rgba(0, 0, 0, 0.6); outline: none; }
+.carte-jeu .vue { position: absolute; inset: 0; background-size: cover; background-position: center; image-rendering: pixelated;
+  transition: transform 4s ease-out; }
+.carte-jeu:hover .vue { transform: scale(1.15); }
+.carte-jeu .voile { position: absolute; inset: 0; background: linear-gradient(transparent 30%, rgba(0, 0, 0, 0.88)); }
+.carte-jeu .infos { position: absolute; left: 14px; right: 14px; bottom: 12px; }
+.carte-jeu .titre { font: 700 24px/1.1 var(--pixel); text-shadow: 0 2px 6px #000; }
+.carte-jeu .bande { display: block; width: 46px; height: 4px; border-radius: 2px; margin: 6px 0;
+  background: linear-gradient(90deg, var(--accent) 50%, var(--accent2) 50%); }
+.carte-jeu .details { font-size: 12px; color: #d6d9e2; }
+.carte-jeu .dernier { position: absolute; top: 10px; right: 10px; background: var(--accent); color: var(--sur-accent);
+  font: 600 12px var(--pixel); padding: 2px 8px; border-radius: 6px; }
+.carte-jeu[data-jeu="hgss"] { --accent: #d9a62e; --sur-accent: #1b1405; --accent2: #c9d2e0; }
+.carte-jeu[data-jeu="platine"] { --accent: #8f7bd8; --sur-accent: #fff; --accent2: #cfd3de; }
+.carte-jeu[data-jeu="noire"] { --accent: #f1f1f1; --sur-accent: #111; --accent2: #6b6b6b; }
+.carte-jeu[data-jeu="noire2"] { --accent: #3fa7e6; --sur-accent: #fff; --accent2: #e8f4fb; }
+.accueil-boite .credit { margin-top: 20px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-container, .ici .epingle, .ici .ombre, .ball.pleine { animation: none; }
+}
+
 /* ---------- Mode OBS : juste la carte et le bandeau ---------- */
-body.obs #barre, body.obs #panneau, body.obs .leaflet-control-container { display: none; }
-body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent; }
+body.obs #barre, body.obs #panneau, body.obs .leaflet-control-container, body.obs #accueil { display: none; }
+body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent; animation: none; }
 
 /* ---------- Téléphone ---------- */
 @media (max-width: 640px) {
@@ -118,4 +232,7 @@ body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent
   #panneau { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 70vh; border-radius: 14px 14px 0 0; }
   #panneau.ferme { transform: translateY(calc(100% + 10px)); }
   .leaflet-control-zoom { display: none; }
+  #btn-jeu .nom-long { display: none; }
+  #btn-jeu .nom-court { display: inline; }
+  .carte-jeu { height: 150px; }
 }

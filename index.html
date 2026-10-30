@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carte IronMON FR</title>
 <link rel="icon" href="images/icones/pokeball.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="lib/leaflet/leaflet.css">
 <link rel="stylesheet" href="carte.css">
 </head>
@@ -15,6 +18,7 @@
 <header id="barre">
   <button id="btn-panneau" class="rond" title="Panneau de réglages" aria-label="Ouvrir le panneau">☰</button>
   <select id="choix-jeu" title="Jeu"></select>
+  <button id="btn-jeu" title="Changer de jeu"><span class="pastille"></span><span class="nom-long"></span><span class="nom-court"></span> ▾</button>
   <div id="regions" class="groupe"></div>
   <div id="zone-recherche">
     <input id="recherche" type="search" placeholder="Chercher un lieu, un dresseur, « CT »…" autocomplete="off">
@@ -73,6 +77,16 @@
     <button id="ouvrir-aide" class="bouton">❓ Aide et crédits</button>
   </section>
 </aside>
+
+<!-- Écran d'accueil : choisir son jeu -->
+<div id="accueil" hidden>
+  <div class="accueil-boite">
+    <h1>Carte IronMON FR</h1>
+    <p>Dresseurs, objets et passages de chaque région, pour préparer ta run. Choisis ton jeu :</p>
+    <div id="cartes-jeux"></div>
+    <p class="credit">Carte HGSS d'origine : « HGSS IronMON Map » de Kelsey Young (licence MIT). Pokémon © Nintendo / Creatures / Game Freak.</p>
+  </div>
+</div>
 
 <!-- Bandeau de position (surtout pour OBS) -->
 <div id="bandeau" hidden></div>
