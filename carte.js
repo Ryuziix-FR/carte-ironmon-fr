@@ -94,6 +94,9 @@ function decoderProgression(j, code) {
 const PROG = params.get("prog");
 let LECTURE = !!PROG && !OBS;
 
+// Jeux 3DS, suivis avec Citra (les autres : BizHawk)
+const JEUX_CITRA = ["soleil"];
+
 function changerJeu(id) {
   jeuId = id;
   jeu = JEUX[id];
@@ -110,6 +113,11 @@ function changerJeu(id) {
   $("btn-jeu").querySelector(".nom-long").textContent = jeu.nom;
   $("btn-jeu").querySelector(".nom-court").textContent = jeu.court || jeu.nom;
   $("credit").textContent = jeu.credit || "";
+  // Aide à l'installation du suivi : seulement celle de l'émulateur de ce jeu (Citra pour Soleil, BizHawk sinon)
+  const citra = JEUX_CITRA.includes(id);
+  $("aide-ds").hidden = citra;
+  $("aide-citra").hidden = !citra;
+  $("aide-emulateur").textContent = citra ? "Citra" : "BizHawk";
   // Index des lieux de toutes les régions (noms anglais du tracker et noms français)
   lieuxIndex = {};
   for (const [rid, r] of Object.entries(jeu.regions)) {

@@ -69,6 +69,7 @@
       <button id="btn-relier" class="bouton">🎮 Relier mon jeu</button>
       <details class="aide">
         <summary>Comment faire ? (une seule fois, 1 minute)</summary>
+        <div id="aide-ds">
         <p><b>Jeux DS sur BizHawk</b> (Diamant, Perle, Platine, HeartGold, SoulSilver, Noire, Blanche, Noire 2, Blanche 2)</p>
         <ol>
           <li><a href="suivi/carte-ironmon-fr.lua" download>Télécharge le script de suivi</a> et range-le où tu veux.</li>
@@ -77,12 +78,15 @@
           <li>Ici, clique <b>Relier mon jeu</b> et choisis le fichier <code>carte-ironmon-position.json</code>,
             apparu à côté du script.</li>
         </ol>
+        </div>
+        <div id="aide-citra" hidden>
         <p><b>Jeux 3DS sur Citra</b> (Soleil)</p>
         <ol>
           <li><a href="suivi/suivi-citra.zip" download>Télécharge le suivi Citra</a> et décompresse-le où tu veux.</li>
           <li>Ta partie lancée dans Citra, double-clique <code>suivi-citra.bat</code> et laisse sa fenêtre ouverte.</li>
           <li>Ici, clique <b>Relier mon jeu</b> et choisis <code>carte-ironmon-position.json</code>, apparu dans ce dossier.</li>
         </ol>
+        </div>
         <p>Marche avec Chrome ou Edge sur ordinateur.</p>
       </details>
     </div>
@@ -163,7 +167,8 @@
     <li><b>Passages</b> : clique sur un carré de couleur pour sauter à l'autre bout.</li>
     <li><b>Recherche</b> : un lieu (« Route 32 », « Rosalia »), un dresseur (« Albert »), « CT », « caché », « arène ».</li>
     <li><b>Suivre ma position</b> : panneau « Tracker », bouton <b>Relier mon jeu</b> (Chrome ou Edge sur ordinateur).
-      La carte suit alors ta partie BizHawk et saute toute seule au bon endroit.</li>
+      La carte suit alors ta partie <span id="aide-emulateur">BizHawk</span> et saute toute seule au bon endroit.
+      Le panneau explique comment l'installer pour ce jeu.</li>
     <li><b>Pour OBS</b> : ajoute <code>?obs=1</code> à l'adresse (mini-carte qui suit ta position).</li>
   </ul>
   <h3>Raccourcis clavier</h3>

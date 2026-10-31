@@ -53,8 +53,9 @@ function LireSoleil {
 	$p = [byte[]]$p
 	$zone = [BitConverter]::ToUInt16($p, 2)
 	if ($zone -ge $ZONES_SOLEIL.Count) { return $null }
-	return @{ nom = "Pokemon Soleil"; zone = $zone; lieu = $ZONES_SOLEIL[$zone];
-		x = [math]::Round([BitConverter]::ToSingle($p, 4)); z = [math]::Round([BitConverter]::ToSingle($p, 12)) }
+	return @{ nom = "Pokemon Soleil"; monde = [BitConverter]::ToUInt16($p, 0); zone = $zone; lieu = $ZONES_SOLEIL[$zone]
+		x = [math]::Round([BitConverter]::ToSingle($p, 4)); y = [math]::Round([BitConverter]::ToSingle($p, 8))
+		z = [math]::Round([BitConverter]::ToSingle($p, 12)) }
 }
 
 function Json([string]$s) { '"' + ($s -replace '\\', '\\' -replace '"', '\"') + '"' }
@@ -69,8 +70,8 @@ while ($true) {
 		$cle = "$($e.zone)|$($e.x)|$($e.z)"
 		if ($cle -ne $dernier) {
 			$dernier = $cle
-			$json = '{"jeu":{"nom":' + (Json $e.nom) + '},"lieu":' + (Json $e.lieu) + ',"zone":' + $e.zone +
-				',"x":' + $e.x + ',"z":' + $e.z + ',"heure":' + [DateTimeOffset]::Now.ToUnixTimeSeconds() + '}'
+			$json = '{"jeu":{"nom":' + (Json $e.nom) + '},"lieu":' + (Json $e.lieu) + ',"monde":' + $e.monde + ',"zone":' + $e.zone +
+				',"x":' + $e.x + ',"y":' + $e.y + ',"z":' + $e.z + ',"heure":' + [DateTimeOffset]::Now.ToUnixTimeSeconds() + '}'
 			[IO.File]::WriteAllText($sortie, $json, (New-Object System.Text.UTF8Encoding($false)))
 			if ($attente) { Write-Host "Jeu trouvé." }
 			$attente = $false
