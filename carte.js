@@ -42,7 +42,7 @@ const memoire = {
     try { localStorage.setItem(this.cle(jeu), JSON.stringify(etat)); } catch (e) { /* navigation privée : tant pis */ }
   },
 };
-const reglagesParDefaut = { dresseurs: true, objets: true, ct: true, caches: true, faits: true, passages: false,
+const reglagesParDefaut = { trace: true, dresseurs: true, objets: true, ct: true, caches: true, faits: true, passages: false,
   liens: "jamais", itineraires: false, notes: true, suivre: true, autoReset: false };
 let reglages;
 try { reglages = Object.assign({}, reglagesParDefaut, JSON.parse(localStorage.getItem("carte-ironmon-reglages") || "{}")); }
@@ -67,6 +67,7 @@ try { jeuId = jeuId || localStorage.getItem("carte-ironmon-jeu"); } catch (e) { 
 jeuId = jeuId || "hgss";
 if (!JEUX[jeuId]) jeuId = Object.keys(JEUX)[0];
 let jeu, regionId, region, etat;
+let battusVus = null; // dresseurs battus déjà vus dans le fichier du tracker (pour ne cocher que les nouveaux)
 let fondCarte, couches = {}, entites = [], lieuxIndex = {}, ici = null, lieuActuel = null;
 
 function cleEntite(type, i) { return `${regionId}-${type}-${i}`; }
@@ -113,6 +114,7 @@ function changerJeu(id) {
   $("btn-jeu").querySelector(".nom-long").textContent = jeu.nom;
   $("btn-jeu").querySelector(".nom-court").textContent = jeu.court || jeu.nom;
   $("credit").textContent = jeu.credit || "";
+  battusVus = null;
   // Aide à l'installation du suivi : seulement celle de l'émulateur de ce jeu (Citra pour Soleil, BizHawk sinon)
   const citra = JEUX_CITRA.includes(id);
   $("aide-ds").hidden = citra;
@@ -163,6 +165,7 @@ function changerRegion(rid, vue) {
   void $("carte").offsetWidth;
   $("carte").classList.add("fondu");
   construire();
+  dessinerTrace();
   if (ici && lieuActuel) placerIci(lieuActuel);
 }
 
@@ -397,6 +400,46 @@ function eclair(couche) {
   el.classList.add("eclair");
 }
 
+// Dresseurs battus (numéros donnés par le tracker ou le script de suivi) : la carte les coche toute seule. Seuls les
+// nouveaux comptent : la liste du tracker peut garder ceux d'une run d'avant.
+function cocherBattus(ids) {
+  const nouveaux = new Set(ids.map(Number));
+  if (battusVus === null || ids.length < battusVus.size) { battusVus = nouveaux; return; }
+  const ajout = [...nouveaux].filter((id) => !battusVus.has(id));
+  battusVus = nouveaux;
+  if (!ajout.length || LECTURE) return;
+  const coches = new Set();
+  for (const [rid, r] of Object.entries(jeu.regions)) {
+    r.dresseurs.forEach((dr, i) => {
+      const k = `${rid}-d-${i}`;
+      if (dr.tid != null && ajout.includes(dr.tid) && !etat.fait[k]) { etat.fait[k] = 1; coches.add(k); }
+    });
+  }
+  if (!coches.size) return;
+  enregistrer();
+  for (const e of entites) {
+    if (!coches.has(e.cle)) continue;
+    e.rect.setStyle(styleEntite(e));
+    if (!visible(e)) couches.entites.removeLayer(e.rect);
+    decor(e, true);
+    eclair(e.rect);
+  }
+  majPanneau();
+  majPanneauxLieux();
+  const noms = [];
+  for (const [rid, r] of Object.entries(jeu.regions)) r.dresseurs.forEach((dr, i) => { if (coches.has(`${rid}-d-${i}`)) noms.push(dr.nom); });
+  annoncer("✔ Battu : " + noms.join(", "));
+}
+// Petit message en bas de la carte, quelques secondes
+function annoncer(texte) {
+  let el = $("annonce");
+  if (!el) { el = document.createElement("div"); el.id = "annonce"; document.body.appendChild(el); }
+  el.textContent = texte;
+  el.classList.remove("vue");
+  void el.offsetWidth;
+  el.classList.add("vue");
+}
+
 function enregistrer() { if (!LECTURE) memoire.ecrire(jeuId, etat); }
 
 // ---------- Notes ----------
@@ -579,11 +622,52 @@ function trouverLieu(nom) {
   return null;
 }
 function placerIci(l) {
+  if (!l || l.region !== regionId) {
+    if (ici) map.removeLayer(ici);
+    ici = null;
+    return;
+  }
+  ajouterTrace(l);
+  if (ici && ici.options.region === regionId) {
+    // même région : l'épingle glisse jusqu'à sa nouvelle place
+    const el = ici.getElement();
+    if (el) {
+      el.classList.add("glisse");
+      clearTimeout(placerIci.t);
+      placerIci.t = setTimeout(() => el.classList.remove("glisse"), 700);
+      const nom = el.querySelector(".nom");
+      if (nom) nom.textContent = l.nom;
+    }
+    ici.setLatLng(ll(l.x, l.y));
+    return;
+  }
   if (ici) map.removeLayer(ici);
-  ici = null;
-  if (!l || l.region !== regionId) return;
-  ici = L.marker(ll(l.x, l.y), { interactive: false, keyboard: false, zIndexOffset: 1000,
+  ici = L.marker(ll(l.x, l.y), { interactive: false, keyboard: false, zIndexOffset: 1000, region: regionId,
     icon: L.divIcon({ className: "ici", html: `<div class="onde"></div><div class="onde deux"></div><div class="ombre"></div><div class="epingle"></div><div class="nom">${echap(l.nom)}</div>`, iconSize: [0, 0] }) }).addTo(map);
+}
+
+// Trace de ton chemin pendant la run (par région) : un trait pointillé qui suit tes pas, effacé à chaque nouvelle run
+let traceCouche = null;
+function ajouterTrace(l) {
+  if (LECTURE) return;
+  etat.trace ??= {};
+  const t = (etat.trace[regionId] ??= []);
+  const der = t[t.length - 1];
+  if (der && Math.hypot(der[0] - l.x, der[1] - l.y) < 12) return;
+  t.push([Math.round(l.x), Math.round(l.y)]);
+  if (t.length > 4000) t.splice(0, t.length - 4000);
+  enregistrer();
+  dessinerTrace();
+}
+function dessinerTrace() {
+  if (traceCouche) map.removeLayer(traceCouche);
+  traceCouche = null;
+  const t = etat.trace?.[regionId];
+  if (!reglages.trace || !t || t.length < 2) return;
+  traceCouche = L.layerGroup([
+    L.polyline(t.map(([x, y]) => ll(x, y)), { color: "#000", weight: 7, opacity: 0.25, interactive: false, lineJoin: "round" }),
+    L.polyline(t.map(([x, y]) => ll(x, y)), { className: "trace", color: "#ffd34d", weight: 3.5, opacity: 0.95, dashArray: "2 9", lineCap: "round", interactive: false }),
+  ]).addTo(map);
 }
 const JEU_DU_TRACKER = (j) => {
   const n = `${j?.nom || ""} ${j?.badges || ""}`;
@@ -624,6 +708,7 @@ async function lireTracker() {
     const run = d.chrono?.debut;
     if (run && derniereRun && run !== derniereRun && reglages.autoReset) nouvelleRun(true);
     derniereRun = run || derniereRun;
+    if (Array.isArray(d.battus)) cocherBattus(d.battus);
     // Le suivi Citra donne aussi la position du joueur (x, z du jeu) : l'épingle suit alors ses pas
     const cleSuivi = d.lieu + (d.x != null ? `|${d.x}|${d.z}` : "");
     if (d.lieu && cleSuivi !== dernierNomLieu) {
@@ -673,7 +758,9 @@ function nouvelleRun(auto) {
   if (!auto && !confirm("Tout décocher pour une nouvelle run ? (Tes notes sont gardées.)")) return;
   etat.fait = {};
   etat.etoile = {};
+  etat.trace = {};
   enregistrer();
+  dessinerTrace();
   for (const e of entites) { e.rect.setStyle(styleEntite(e)); }
   appliquerFiltres();
   majPanneau();
@@ -696,6 +783,8 @@ brancher("voir-itineraires", "itineraires");
 brancher("voir-notes", "notes");
 brancher("suivre", "suivre");
 brancher("auto-reset", "autoReset");
+brancher("voir-trace", "trace");
+$("voir-trace").addEventListener("change", dessinerTrace);
 for (const r of document.querySelectorAll('input[name="liens"]')) {
   r.checked = r.value === reglages.liens;
   r.addEventListener("change", () => { reglages.liens = r.value; sauverReglages(); construire(); });

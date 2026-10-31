@@ -20,6 +20,8 @@ body[data-jeu="hgss"] { --accent: #d9a62e; --sur-accent: #1b1405; --accent2: #c9
 body[data-jeu="platine"] { --accent: #8f7bd8; --sur-accent: #fff; --accent2: #cfd3de; --mer: #1b1d36; --mer2: #0d0e1e; }
 body[data-jeu="noire"] { --accent: #f1f1f1; --sur-accent: #111; --accent2: #6b6b6b; --mer: #1a1a1d; --mer2: #08080a; }
 body[data-jeu="noire2"] { --accent: #3fa7e6; --sur-accent: #fff; --accent2: #e8f4fb; --mer: #0b2233; --mer2: #04101a; }
+body[data-jeu="rosa"] { --accent: #d9443f; --sur-accent: #fff; --accent2: #3f7fd9; --mer: #0b2140; --mer2: #050f22; }
+body[data-jeu="soleil"] { --accent: #f2952c; --sur-accent: #1d1003; --accent2: #6f7fe8; --mer: #08303f; --mer2: #031621; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--fond); color: var(--texte);
@@ -235,6 +237,10 @@ body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent
   #btn-jeu .nom-long { display: none; }
   #btn-jeu .nom-court { display: inline; }
   .carte-jeu { height: 150px; }
+  /* les îles et régions : une seule ligne, qu'on fait défiler du doigt */
+  #regions { flex-wrap: nowrap; max-width: calc(100vw - 16px); overflow-x: auto; scrollbar-width: none; }
+  #regions::-webkit-scrollbar { display: none; }
+  #regions button { white-space: nowrap; flex: none; padding: 0 12px; }
 }
 
 /* ---------- Prototype : légende ---------- */
@@ -296,3 +302,17 @@ kbd { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6
 dialog h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 14px 0 6px; }
 
 [hidden] { display: none !important; }
+
+/* Annonce « ✔ Battu : … » quand la carte coche un dresseur toute seule */
+#annonce { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); z-index: 2000; padding: 10px 18px;
+  border-radius: 10px; background: rgba(20, 24, 32, 0.92); color: #fff; font-weight: 600; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; }
+#annonce.vue { animation: annonce 4s ease forwards; }
+@keyframes annonce { 0% { opacity: 0; transform: translate(-50%, 20px); } 8%, 85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 10px); } }
+
+/* Ton épingle glisse d'un point à l'autre ; la trace de ton chemin avance doucement */
+.leaflet-marker-icon.ici.glisse { transition: transform 0.6s ease-out; }
+.trace { animation: trace-avance 1.2s linear infinite; }
+@keyframes trace-avance { to { stroke-dashoffset: -11; } }
+@media (prefers-reduced-motion: reduce) { .trace { animation: none; } }

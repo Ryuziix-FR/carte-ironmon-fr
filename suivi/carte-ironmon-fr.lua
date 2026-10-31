@@ -2,7 +2,8 @@
 --
 -- 1. Dans BizHawk : menu Tools > Lua Console, puis Script > Open Script… et choisis ce fichier.
 --    Il tourne en plus de ton tracker habituel, il ne le gêne pas.
--- 2. Le script écrit ton lieu dans « carte-ironmon-position.json », juste à côté de ce fichier.
+-- 2. Le script écrit ton lieu dans « carte-ironmon-position.json », juste à côté de ce fichier, et les dresseurs
+--    que tu bats : la carte les coche toute seule.
 -- 3. Sur la carte (Chrome ou Edge), clique « Relier mon jeu » et choisis ce fichier une fois.
 --
 -- Jeux : Diamant / Perle / Platine, HeartGold / SoulSilver (hg-engine compris), Noire / Blanche, Noire 2 / Blanche 2.
@@ -21,13 +22,13 @@ LIEUX.unys2 = {[0]="Black City",[6]="Striaton City",[16]="Nacrene City",[28]="Ca
 local JEUX = {
 	ADA = {nom = "Pokemon Platinum (Diamond)", lieux = "sinnoh", global = 0xB70, carte = 0x144C},
 	APA = {nom = "Pokemon Platinum (Pearl)", lieux = "sinnoh", global = 0xB70, carte = 0x144C},
-	CPU = {nom = "Pokemon Platinum", lieux = "sinnoh", global = 0xBA8, carte = 0x239B0},
-	IPK = {nom = "Pokemon HeartGold", lieux = "johto", global = 0xBA8, carte = 0x25FE4, hg = 0xC000},
-	IPG = {nom = "Pokemon SoulSilver", lieux = "johto", global = 0xBA8, carte = 0x25FE4, hg = 0xC000},
-	IRB = {nom = "Pokemon Black", lieux = "unys", enfant = 0x2592B2, parent = 0x2592B4},
-	IRA = {nom = "Pokemon White", lieux = "unys", enfant = 0x2592D2, parent = 0x2592D4},
-	IRE = {nom = "Pokemon Black 2", lieux = "unys2", pointeur = 0x24, enfant = 0x41B5C, parent = 0x41B44},
-	IRD = {nom = "Pokemon White 2", lieux = "unys2", pointeur = 0x24, enfant = 0x41B5C, parent = 0x41B44},
+	CPU = {nom = "Pokemon Platinum", lieux = "sinnoh", global = 0xBA8, carte = 0x239B0, statut = 0x24A55A, adversaire = 0x4189E},
+	IPK = {nom = "Pokemon HeartGold", lieux = "johto", global = 0xBA8, carte = 0x25FE4, hg = 0xC000, statut = 0x246F48, adversaire = 0x440AA},
+	IPG = {nom = "Pokemon SoulSilver", lieux = "johto", global = 0xBA8, carte = 0x25FE4, hg = 0xC000, statut = 0x246F48, adversaire = 0x440AA},
+	IRB = {nom = "Pokemon Black", lieux = "unys", enfant = 0x2592B2, parent = 0x2592B4, statut = 0x1D0798, adversaire_abs = 0x2697BE},
+	IRA = {nom = "Pokemon White", lieux = "unys", enfant = 0x2592D2, parent = 0x2592D4, statut = 0x1D07B8, adversaire_abs = 0x2697DE},
+	IRE = {nom = "Pokemon Black 2", lieux = "unys2", pointeur = 0x24, enfant = 0x41B5C, parent = 0x41B44, statut = 0x1B5138, adversaire = 0x5262E},
+	IRD = {nom = "Pokemon White 2", lieux = "unys2", pointeur = 0x24, enfant = 0x41B5C, parent = 0x41B44, statut = 0x1B5178, adversaire = 0x5262E},
 }
 
 local function u16(a) return memory.read_u16_le(a % 0x1000000, "Main RAM") end
@@ -40,12 +41,47 @@ local function json(s)
 	return '"' .. tostring(s):gsub('[%c"\\]', function(c) return c == '"' and '\\"' or (c == "\\" and "\\\\" or " ") end) .. '"'
 end
 
+local battus = {} -- numéros des dresseurs battus depuis le lancement du script
 local function ecrire(jeu, lieu, carte)
 	local f = io.open(chemin, "w")
 	if not f then return end
+	local liste = {}
+	for id in pairs(battus) do table.insert(liste, id) end
+	table.sort(liste)
 	f:write("{" .. '"jeu":{"nom":' .. json(jeu) .. '},"lieu":' .. json(lieu) .. ',"carte":' .. carte
-		.. ',"heure":' .. os.time() .. "}")
+		.. ',"battus":[' .. table.concat(liste, ",") .. '],"heure":' .. os.time() .. "}")
 	f:close()
+end
+
+-- Combat contre un dresseur : son numéro est noté pendant le combat ; à la fin du combat, il compte comme battu
+-- (en IronMON, perdre un combat finit la run). hg-engine range ses combats ailleurs : pas de détection.
+local function baseDuJeu(j)
+	if j.global then return u32(u32(j.global) + 0x20) % 0x1000000 end
+	if j.pointeur then return u32(j.pointeur) % 0x1000000 end
+	return 0
+end
+local enCombat, adversaire = false, 0
+local function suivreCombat(j, hgEngine)
+	if not j.statut or hgEngine then return false end
+	local statut = u16(j.statut)
+	local combat = statut == 0x2100 or statut == 0x2101
+	if combat then
+		local a = j.adversaire_abs or (baseDuJeu(j) + j.adversaire)
+		local id = u16(a)
+		if id ~= 0 then adversaire = id end
+		enCombat = true
+		return false
+	end
+	if enCombat then
+		enCombat = false
+		if adversaire ~= 0 and not battus[adversaire] then
+			battus[adversaire] = true
+			adversaire = 0
+			return true
+		end
+		adversaire = 0
+	end
+	return false
 end
 
 -- Un numéro de carte qu'on sait nommer (le 0 = « Mystery Zone » veut dire « pas encore en jeu »)
@@ -90,8 +126,9 @@ local dernier, image = nil, 0
 while true do
 	image = image + 1
 	if image % 30 == 0 then
+		local okc, nouveau = pcall(suivreCombat, j, decalage == true)
 		local ok, carte = pcall(lireCarte, j, lieux)
-		if ok and carte and valide(lieux, carte) and carte ~= dernier then
+		if ok and carte and valide(lieux, carte) and (carte ~= dernier or (okc and nouveau)) then
 			dernier = carte
 			ecrire(j.nom, lieux[carte], carte)
 		end
