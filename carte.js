@@ -1044,6 +1044,11 @@ if (EN_LIGNE) {
   } else {
     $("etat-tracker").textContent = "Pour que la carte suive ta partie, ouvre-la dans Chrome ou Edge sur ordinateur. "
       + "Ici, tout le reste fonctionne : coches, notes, recherche.";
+    // Le bouton ne marche pas ici, mais on montre quand même la marche à suivre pour la préparer
+    if (!OBS) {
+      $("relier").hidden = false;
+      $("btn-relier").hidden = true;
+    }
   }
   // En ligne, on arrive sur le choix du jeu (sauf lien direct ?jeu=…)
   if (!OBS && !params.has("jeu")) ouvrirAccueil();
