@@ -1042,8 +1042,8 @@ if (EN_LIGNE) {
       else $("btn-relier").textContent = "🎮 Reprendre le suivi de mon jeu";
     }).catch(() => {});
   } else {
-    $("etat-tracker").textContent = "Pour que la carte suive ta partie, ouvre-la dans Chrome ou Edge sur ordinateur. "
-      + "Ici, tout le reste fonctionne : coches, notes, recherche.";
+    $("etat-tracker").textContent = "Pour que la carte suive ta partie, ouvre-la dans Chrome ou Edge sur ordinateur : "
+      + "le bouton « 🎮 Relier mon jeu » apparaîtra ici. Sur cet appareil, tout le reste fonctionne : coches, notes, recherche.";
     // Le bouton ne marche pas ici, mais on montre quand même la marche à suivre pour la préparer
     if (!OBS) {
       $("relier").hidden = false;
