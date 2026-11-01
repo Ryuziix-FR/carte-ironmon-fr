@@ -17,6 +17,7 @@
   <select id="choix-jeu" title="Jeu"></select>
   <button id="btn-jeu" title="Changer de jeu"><span class="pastille"></span><span class="nom-long"></span><span class="nom-court"></span> ▾</button>
   <div id="regions" class="groupe"></div>
+  <button id="btn-guide" title="Guide de la run (G)" hidden>📖 <span class="nom-long">Guide</span></button>
   <div id="zone-recherche">
     <input id="recherche" type="search" placeholder="Chercher un lieu, un dresseur, « CT »…" autocomplete="off">
     <ul id="resultats" hidden></ul>
@@ -110,6 +111,23 @@
   </section>
 </aside>
 
+<!-- Guide de la run : les étapes dans l'ordre, à cocher, chacune reliée à son lieu -->
+<aside id="guide" class="ferme" aria-label="Guide de la run">
+  <div class="panneau-tete">
+    <strong id="guide-titre">Guide</strong>
+    <button id="fermer-guide" class="rond petit" aria-label="Fermer le guide">✕</button>
+  </div>
+  <p id="guide-intro" class="aide"></p>
+  <div class="barre-prog"><div id="guide-prog"></div></div>
+  <p id="guide-compte" class="aide"></p>
+  <details id="guide-regles">
+    <summary>Règles, réglages et à savoir</summary>
+    <ul id="guide-liste-regles"></ul>
+  </details>
+  <div id="guide-etapes"></div>
+  <p id="guide-source" class="credit"></p>
+</aside>
+
 <!-- Écran d'accueil : choisir son jeu -->
 <div id="accueil" hidden>
   <div class="accueil-boite">
@@ -180,6 +198,7 @@
     <tr><td><kbd>P</kbd></td><td>Ouvrir ou fermer le panneau</td></tr>
     <tr><td><kbd>L</kbd></td><td>Afficher la légende</td></tr>
     <tr><td><kbd>J</kbd></td><td>Changer de jeu</td></tr>
+    <tr><td><kbd>G</kbd></td><td>Ouvrir ou fermer le guide (Soleil)</td></tr>
     <tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>Zoomer, dézoomer</td></tr>
     <tr><td><kbd>?</kbd></td><td>Cette aide</td></tr>
     <tr><td><kbd>Échap</kbd></td><td>Fermer</td></tr>
@@ -197,6 +216,7 @@
 <script src="donnees/noire2.js"></script>
 <script src="donnees/rosa.js"></script>
 <script src="donnees/soleil.js"></script>
+<script src="donnees/guide-soleil.js"></script>
 <script src="carte.js"></script>
 </body>
 </html>

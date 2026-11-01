@@ -138,6 +138,7 @@ function changerJeu(id) {
     b.onclick = () => changerRegion(rid);
     boutons.appendChild(b);
   }
+  majGuide();
   changerRegion(params.get("region") && jeu.regions[params.get("region")] ? params.get("region")
     : etat.derniereRegion && jeu.regions[etat.derniereRegion] ? etat.derniereRegion : Object.keys(jeu.regions)[0]);
 }
@@ -537,6 +538,58 @@ function majPanneau() {
   if (!etat.notes.length) notes.innerHTML = '<li class="aide">Aucune note pour l\'instant.</li>';
 }
 
+// ---------- Guide de la run (seulement pour les jeux qui en ont un : donnees/guide-*.js) ----------
+function majGuide() {
+  const g = (window.GUIDES || {})[jeuId];
+  $("btn-guide").hidden = !g;
+  if (!g) { $("guide").classList.add("ferme"); return; }
+  etat.guide = etat.guide || {};
+  $("guide-titre").textContent = g.titre;
+  $("guide-intro").textContent = g.intro;
+  $("guide-liste-regles").innerHTML = (g.avertissement ? `<li><i>${echap(g.avertissement)}</i></li>` : "")
+    + g.regles.map((r) => `<li>${echap(r)}</li>`).join("");
+  $("guide-source").innerHTML = `D'après le <a href="${echap(g.source.url)}" target="_blank" rel="noopener">« ${echap(g.source.nom)} »</a>`
+    + ` de ${echap(g.source.auteur)}, adapté à Soleil et réécrit en français.`;
+  const boite = $("guide-etapes");
+  boite.innerHTML = "";
+  let total = 0, faits = 0;
+  for (const partie of g.parties) {
+    const h = document.createElement("h3");
+    h.textContent = partie.nom;
+    boite.appendChild(h);
+    for (const e of partie.etapes) {
+      total++;
+      const fait = !!etat.guide[e.id];
+      if (fait) faits++;
+      const d = document.createElement("details");
+      d.className = "etape" + (fait ? " faite" : "");
+      d.open = !fait && faits === total - 1 && !boite.querySelector("details[open]");
+      const lieu = e.lieu && lieuxIndex[e.lieu];
+      d.innerHTML = `<summary><input type="checkbox" ${fait ? "checked" : ""} ${LECTURE ? "disabled" : ""}
+          aria-label="Étape faite"> <span>${echap(e.titre)}</span></summary>
+        <ul>${e.points.map((pt) => `<li>${echap(pt)}</li>`).join("")}</ul>
+        ${lieu ? `<button class="bouton-petit voir-lieu">📍 Voir ${echap(lieu.nom)} sur la carte</button>` : ""}`;
+      const c = d.querySelector("input");
+      c.onclick = (ev) => ev.stopPropagation();
+      c.onchange = () => {
+        if (c.checked) etat.guide[e.id] = 1; else delete etat.guide[e.id];
+        enregistrer();
+        majGuide();
+      };
+      if (lieu) d.querySelector(".voir-lieu").onclick = () => {
+        if (lieu.region !== regionId) changerRegion(lieu.region);
+        allerA(ll(lieu.x, lieu.y), 4);
+        if (matchMedia("(max-width: 640px)").matches) $("guide").classList.add("ferme");
+      };
+      boite.appendChild(d);
+    }
+  }
+  $("guide-prog").style.width = (total ? 100 * faits / total : 0) + "%";
+  $("guide-compte").textContent = `${faits} étape${faits > 1 ? "s" : ""} sur ${total}`;
+}
+$("btn-guide").onclick = () => $("guide").classList.toggle("ferme");
+$("fermer-guide").onclick = () => $("guide").classList.add("ferme");
+
 function allerA(latlng, zoom, aEclairer) {
   map.flyTo(latlng, Math.max(map.getZoom(), zoom || 5), { duration: 0.6 });
   if (aEclairer) map.once("moveend", () => eclair(aEclairer));
@@ -759,7 +812,9 @@ function nouvelleRun(auto) {
   etat.fait = {};
   etat.etoile = {};
   etat.trace = {};
+  etat.guide = {};
   enregistrer();
+  majGuide();
   dessinerTrace();
   for (const e of entites) { e.rect.setStyle(styleEntite(e)); }
   appliquerFiltres();
@@ -887,10 +942,11 @@ document.addEventListener("keydown", (ev) => {
   else if (k === "p" || k === "P") $("panneau").classList.toggle("ferme");
   else if (k === "l" || k === "L") basculerLegende();
   else if (k === "j" || k === "J") ouvrirAccueil();
+  else if ((k === "g" || k === "G") && !$("btn-guide").hidden) $("guide").classList.toggle("ferme");
   else if (k === "?") $("aide").showModal();
   else if (k === "+" || k === "=") map.zoomIn(0.5);
   else if (k === "-") map.zoomOut(0.5);
-  else if (k === "Escape") { basculerLegende(false); $("panneau").classList.add("ferme"); }
+  else if (k === "Escape") { basculerLegende(false); $("panneau").classList.add("ferme"); $("guide").classList.add("ferme"); }
 });
 
 changerJeu(jeuId);

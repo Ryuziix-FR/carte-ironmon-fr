@@ -55,6 +55,9 @@ html, body { margin: 0; height: 100%; background: var(--fond); color: var(--text
 #btn-jeu .pastille { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--accent2); }
 #btn-jeu:hover { border-color: var(--accent); }
 #btn-jeu .nom-court { display: none; }
+#btn-guide { height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau); backdrop-filter: blur(14px);
+  color: var(--texte); padding: 0 12px; font: 600 15px var(--pixel); cursor: pointer; }
+#btn-guide:hover { border-color: var(--accent); }
 input[type=search] { height: 40px; border-radius: 10px; border: 1px solid var(--bord); background: var(--panneau);
   backdrop-filter: blur(14px); color: var(--texte); padding: 0 12px; font: inherit; }
 input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
@@ -77,6 +80,25 @@ input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1p
   border: 1px solid var(--bord); border-radius: 14px; overflow: auto; padding: 12px 14px; transition: transform .25s ease;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
 #panneau.ferme { transform: translateX(calc(-100% - 20px)); }
+/* Guide de la run : même verre, à droite */
+#guide { position: fixed; top: 60px; right: 10px; bottom: 10px; width: 340px; z-index: 1001; background: var(--panneau);
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--bord); border-radius: 14px; overflow: auto; padding: 12px 14px; transition: transform .25s ease;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+#guide.ferme { transform: translateX(calc(100% + 20px)); }
+#guide h3 { margin: 14px 0 6px; font: 600 13px var(--pixel); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+#guide-regles { margin: 4px 0 8px; font-size: 13px; }
+#guide-regles summary { cursor: pointer; color: var(--accent2); }
+#guide-regles ul, #guide .etape ul { margin: 6px 0; padding-left: 18px; }
+#guide-regles li, #guide .etape li { margin: 4px 0; line-height: 1.4; }
+#guide .etape { border: 1px solid var(--bord); border-radius: 9px; margin: 6px 0; background: rgba(255, 255, 255, 0.04); }
+#guide .etape summary { cursor: pointer; padding: 8px 10px; display: flex; gap: 8px; align-items: center; font-weight: 600; }
+#guide .etape[open] summary { border-bottom: 1px solid var(--bord); }
+#guide .etape > ul { font-size: 13px; padding-right: 10px; }
+#guide .etape input { accent-color: var(--vert); width: 16px; height: 16px; flex: none; }
+#guide .etape.faite summary span { color: var(--doux); text-decoration: line-through; }
+#guide .voir-lieu { margin: 0 10px 10px; padding: 6px 10px; cursor: pointer; }
+#guide-source a { color: var(--accent2); }
 .panneau-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .panneau-tete strong { font: 700 18px var(--pixel); }
 #panneau section { border-top: 1px solid var(--bord); padding: 10px 0; }
@@ -224,7 +246,7 @@ dialog li { margin: 6px 0; }
 }
 
 /* ---------- Mode OBS : juste la carte et le bandeau ---------- */
-body.obs #barre, body.obs #panneau, body.obs .leaflet-control-container, body.obs #accueil { display: none; }
+body.obs #barre, body.obs #panneau, body.obs #guide, body.obs .leaflet-control-container, body.obs #accueil { display: none; }
 body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent; animation: none; }
 
 /* ---------- Téléphone ---------- */
@@ -233,6 +255,10 @@ body.obs, body.obs #carte, body.obs .leaflet-container { background: transparent
   #zone-recherche { flex-basis: 100%; max-width: none; order: 5; }
   #panneau { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 70vh; border-radius: 14px 14px 0 0; }
   #panneau.ferme { transform: translateY(calc(100% + 10px)); }
+  #guide { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 75vh; border-radius: 14px 14px 0 0; }
+  #guide.ferme { transform: translateY(calc(100% + 10px)); }
+  #btn-guide { position: fixed; right: calc(10px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    z-index: 1000; height: 34px; border-radius: 17px; font-size: 13px; }
   .leaflet-control-zoom { display: none; }
   #btn-jeu .nom-long { display: none; }
   #btn-jeu .nom-court { display: inline; }
