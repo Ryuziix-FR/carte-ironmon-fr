@@ -146,11 +146,11 @@ GUIDES.soleil = {
           "Après Alyxia, au centre commercial d'Ekaeka (en haut à gauche, le jour) : une dame lance une scène (5 Super Balls). Ressors, reviens, reparle-lui : combat contre un Pokémon sauvage de haut niveau ; fuir suffit (seule option en Kaizo) pour une Potion Max. Tu peux le garder pour plus tard."
         ] },
         { id: "hanohano", titre: "Club Hano-Hano", lieu: "clubhanohano", points: [
-          "Saubohr (Faba) veut t'emmener au Paradis Æther dès l'entrée : refuse pour combattre les dresseurs de l'hôtel d'abord.",
+          "Saubohne (Faba) veut t'emmener au Paradis Æther dès l'entrée : refuse pour combattre les dresseurs de l'hôtel d'abord.",
           "Le combat double donne la CT45."
         ] },
         { id: "aether1", titre: "Paradis Æther (1re visite)", lieu: "paradisther", points: [
-          "Parle à Saubohr à l'hôtel pour y aller. Après les scènes, prends l'ascenseur jusqu'au sous-sol 1 pour un objet au nord.",
+          "Parle à Saubohne à l'hôtel pour y aller. Après les scènes, prends l'ascenseur jusqu'au sous-sol 1 pour un objet au nord.",
           "Remonte, fais-toi soigner : combat contre Zéroïd (Nihilego), boosté comme un Dominant. Fuis : il ne peut pas être capturé et s'en va après 5 tours.",
           "CT29 ensuite."
         ] }
@@ -243,7 +243,7 @@ GUIDES.soleil = {
           "En Soleil, le seul autre combat est contre Tili tout en haut."
         ] },
         { id: "ligue", titre: "Ligue Pokémon", lieu: "liguepokemon", points: [
-          "Conseil 4 : Kahili, Margie, Alyxia et Molène, dans l'ordre que tu veux.",
+          "Conseil 4 en Soleil : Pectorius, Alyxia, Margie et Kahili, dans l'ordre que tu veux (Molène n'y est que dans Ultra).",
           "En Soleil, le Maître est le professeur Euphorbe (Kukui), pas Tili.",
           "Après la Ligue, la run Kaizo est finie ; la suite (Ultra-Chimères avec Bellocchio) est en bonus."
         ] }
