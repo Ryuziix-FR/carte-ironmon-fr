@@ -96,7 +96,7 @@ const PROG = params.get("prog");
 let LECTURE = !!PROG && !OBS;
 
 // Jeux 3DS, suivis avec Citra (les autres : BizHawk)
-const JEUX_CITRA = ["soleil"];
+const JEUX_CITRA = ["soleil", "ultrasoleil"];
 
 function changerJeu(id) {
   jeuId = id;
@@ -549,7 +549,7 @@ function majGuide() {
   $("guide-liste-regles").innerHTML = (g.avertissement ? `<li><i>${echap(g.avertissement)}</i></li>` : "")
     + g.regles.map((r) => `<li>${echap(r)}</li>`).join("");
   $("guide-source").innerHTML = `D'après le <a href="${echap(g.source.url)}" target="_blank" rel="noopener">« ${echap(g.source.nom)} »</a>`
-    + ` de ${echap(g.source.auteur)}, adapté à Soleil et réécrit en français.`;
+    + ` de ${echap(g.source.auteur)}, ${echap(g.adapte || "adapté à Soleil et réécrit en français")}.`;
   const boite = $("guide-etapes");
   boite.innerHTML = "";
   let total = 0, faits = 0;
@@ -727,6 +727,7 @@ const JEU_DU_TRACKER = (j) => {
   if (/HGSS|HeartGold|SoulSilver/i.test(n)) return "hgss";
   if (/Platin/i.test(n)) return "platine";
   if (/Omega|Alpha|Oméga|ROSA|ORAS/i.test(n)) return "rosa";
+  if (/Ultra[\s-]*(Soleil|Lune|Sun|Moon)|USUM/i.test(n)) return "ultrasoleil";
   if (/Soleil|Lune|Sun|Moon/i.test(n)) return "soleil";
   if (/(Black|White|Noire|Blanche)\s*2/i.test(n)) return "noire2";
   if (/Black|White|Noire|Blanche/i.test(n)) return "noire";
@@ -851,7 +852,7 @@ $("ouvrir-aide").onclick = () => $("aide").showModal();
 map.on("moveend", () => { etat.vues[regionId] = { c: map.getCenter(), z: map.getZoom() }; enregistrer(); });
 
 // Choix du jeu (les autres jeux arrivent au fur et à mesure)
-const TOUS_LES_JEUX = [["hgss", "HeartGold / SoulSilver"], ["platine", "Platine"], ["noire", "Noire / Blanche"], ["noire2", "Noire 2 / Blanche 2"], ["rosa", "Rubis Oméga / Saphir Alpha"], ["soleil", "Soleil / Lune"]];
+const TOUS_LES_JEUX = [["hgss", "HeartGold / SoulSilver"], ["platine", "Platine"], ["noire", "Noire / Blanche"], ["noire2", "Noire 2 / Blanche 2"], ["rosa", "Rubis Oméga / Saphir Alpha"], ["soleil", "Soleil / Lune"], ["ultrasoleil", "Ultra-Soleil / Ultra-Lune"]];
 for (const [id, nom] of TOUS_LES_JEUX) {
   const o = document.createElement("option");
   o.value = id;

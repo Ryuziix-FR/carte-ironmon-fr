@@ -22,6 +22,8 @@ body[data-jeu="noire"] { --accent: #f1f1f1; --sur-accent: #111; --accent2: #6b6b
 body[data-jeu="noire2"] { --accent: #3fa7e6; --sur-accent: #fff; --accent2: #e8f4fb; --mer: #0b2233; --mer2: #04101a; }
 body[data-jeu="rosa"] { --accent: #d9443f; --sur-accent: #fff; --accent2: #3f7fd9; --mer: #0b2140; --mer2: #050f22; }
 body[data-jeu="soleil"] { --accent: #f2952c; --sur-accent: #1d1003; --accent2: #6f7fe8; --mer: #08303f; --mer2: #031621; }
+/* Ultra-Soleil : orange vif d'Ultra-Necrozma, prisme doré, mer violette des Ultra-Dimensions */
+body[data-jeu="ultrasoleil"] { --accent: #ff5b2e; --sur-accent: #1c0700; --accent2: #ffd23f; --mer: #1b1236; --mer2: #0b0719; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--fond); color: var(--texte);
@@ -239,6 +241,7 @@ dialog li { margin: 6px 0; }
 .carte-jeu[data-jeu="platine"] { --accent: #8f7bd8; --sur-accent: #fff; --accent2: #cfd3de; }
 .carte-jeu[data-jeu="noire"] { --accent: #f1f1f1; --sur-accent: #111; --accent2: #6b6b6b; }
 .carte-jeu[data-jeu="noire2"] { --accent: #3fa7e6; --sur-accent: #fff; --accent2: #e8f4fb; }
+.carte-jeu[data-jeu="ultrasoleil"] { --accent: #ff5b2e; --sur-accent: #1c0700; --accent2: #ffd23f; }
 .accueil-boite .credit { margin-top: 20px; }
 
 @media (prefers-reduced-motion: reduce) {
