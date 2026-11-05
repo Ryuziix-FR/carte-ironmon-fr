@@ -184,6 +184,7 @@ const NOMS_OBJETS = { objet: "Objet", ct: "CT", cache: "Objet caché" };
 function bulleObjet(o, k) {
   return `<b>${NOMS_OBJETS[o.type]}</b>${o.lieu ? `<div class="l">${echap(o.lieu)}</div>` : ""}`
     + (o.approx ? '<div class="l">Position approximative (à quelques cases près)</div>' : "")
+    + (o.guide ? `<div class="l">Objet posé ou caché, d'après le guide (à quelques cases près)</div>` : "")
     + (etat.fait[k] ? '<div class="ok">✔ Ramassé</div>' : "");
 }
 
