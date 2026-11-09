@@ -549,7 +549,7 @@ function majGuide() {
   $("guide-intro").textContent = g.intro;
   $("guide-liste-regles").innerHTML = (g.avertissement ? `<li><i>${echap(g.avertissement)}</i></li>` : "")
     + g.regles.map((r) => `<li>${echap(r)}</li>`).join("");
-  $("guide-source").innerHTML = `D'après le <a href="${echap(g.source.url)}" target="_blank" rel="noopener">« ${echap(g.source.nom)} »</a>`
+  $("guide-source").innerHTML = (g.source.url ? `D'après le <a href="${echap(g.source.url)}" target="_blank" rel="noopener">« ${echap(g.source.nom)} »</a>` : `D'après le « ${echap(g.source.nom)} »`)
     + ` de ${echap(g.source.auteur)}, ${echap(g.adapte || "adapté à Soleil et réécrit en français")}.`;
   const boite = $("guide-etapes");
   boite.innerHTML = "";
