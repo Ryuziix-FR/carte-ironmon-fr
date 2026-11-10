@@ -566,9 +566,20 @@ function majGuide() {
       d.className = "etape" + (fait ? " faite" : "");
       d.open = !fait && faits === total - 1 && !boite.querySelector("details[open]");
       const lieu = e.lieu && lieuxIndex[e.lieu];
+      // Ce que la carte montre pour ce lieu (toutes régions) : utile pour savoir quoi chercher en jouant
+      let surCarte = "";
+      if (lieu) {
+        let nd = 0, no = 0;
+        for (const r of Object.values(JEUX[jeuId].regions)) {
+          for (const x of r.dresseurs || []) if (x.lieu === lieu.nom) nd++;
+          for (const x of r.objets || []) if (x.lieu === lieu.nom) no++;
+        }
+        if (nd || no) surCarte = `<p class="sur-carte">Sur la carte (${echap(lieu.nom)}) : ${nd} dresseur${nd > 1 ? "s" : ""}, ${no} objet${no > 1 ? "s" : ""}</p>`;
+      }
       d.innerHTML = `<summary><input type="checkbox" ${fait ? "checked" : ""} ${LECTURE ? "disabled" : ""}
           aria-label="Étape faite"> <span>${echap(e.titre)}</span></summary>
-        <ul>${e.points.map((pt) => `<li>${echap(pt)}</li>`).join("")}</ul>
+        ${e.aller ? `<p class="aller"><b>Pour y aller</b> ${echap(e.aller)}</p>` : ""}
+        <ul>${e.points.map((pt) => `<li>${echap(pt)}</li>`).join("")}</ul>${surCarte}
         ${lieu ? `<button class="bouton-petit voir-lieu">📍 Voir ${echap(lieu.nom)} sur la carte</button>` : ""}`;
       const c = d.querySelector("input");
       c.onclick = (ev) => ev.stopPropagation();

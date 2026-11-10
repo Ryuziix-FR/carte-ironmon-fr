@@ -97,6 +97,10 @@ input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1p
 #guide .etape summary { cursor: pointer; padding: 8px 10px; display: flex; gap: 8px; align-items: center; font-weight: 600; }
 #guide .etape[open] summary { border-bottom: 1px solid var(--bord); }
 #guide .etape > ul { font-size: 13px; padding-right: 10px; }
+#guide .etape .aller { margin: 8px 10px 2px; padding: 7px 9px; font-size: 13px; line-height: 1.4; border-left: 3px solid var(--accent);
+  background: rgba(255, 255, 255, 0.05); border-radius: 0 6px 6px 0; }
+#guide .etape .aller b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 2px; }
+#guide .etape .sur-carte { margin: 0 10px 6px; font-size: 12px; color: var(--doux); }
 #guide .etape input { accent-color: var(--vert); width: 16px; height: 16px; flex: none; }
 #guide .etape.faite summary span { color: var(--doux); text-decoration: line-through; }
 #guide .voir-lieu { margin: 0 10px 10px; padding: 6px 10px; cursor: pointer; }
