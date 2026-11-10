@@ -100,6 +100,27 @@ input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1p
 #guide .etape .aller { margin: 8px 10px 2px; padding: 7px 9px; font-size: 13px; line-height: 1.4; border-left: 3px solid var(--accent);
   background: rgba(255, 255, 255, 0.05); border-radius: 0 6px 6px 0; }
 #guide .etape .aller b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 2px; }
+/* Mots du lexique : soulignés, définition au survol (ordinateur) ou au toucher (téléphone) */
+#guide .terme { text-decoration: underline dotted var(--accent); text-underline-offset: 3px; cursor: help; }
+#guide .terme .def { display: none; }
+#guide .terme.ouvert .def { display: block; margin: 4px 0; padding: 6px 8px; font-size: 12px; font-weight: 400; color: var(--texte, #e8eaf0);
+  background: rgba(0, 0, 0, 0.35); border-radius: 6px; text-decoration: none; cursor: auto; }
+#guide-lexique { margin: 4px 0 8px; font-size: 13px; }
+#guide-lexique summary { cursor: pointer; color: var(--accent2); }
+#guide-lexique dt { margin-top: 8px; font-weight: 700; color: var(--accent); }
+#guide-lexique dd { margin: 2px 0 0 10px; line-height: 1.4; }
+/* L'étape ouverte sur la carte */
+.zone-etape { animation: eclair 0.6s ease-in-out 3; }
+.etiquette-oblig span { display: inline-block; white-space: nowrap; font: 700 11px var(--pixel, sans-serif); color: #fff;
+  background: #d62f2f; border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, .6); pointer-events: none; }
+/* Entrées des grottes, arènes et bâtiments sur l'extérieur */
+.entree { cursor: pointer; }
+.entree i { display: block; width: 18px; height: 18px; font-style: normal; font-size: 14px; line-height: 18px; text-align: center;
+  background: rgba(20, 22, 30, .8); border: 2px solid #ffd166; border-radius: 50%; }
+.entree span { position: absolute; left: 22px; top: 0; white-space: nowrap; font: 600 11px var(--pixel, sans-serif); color: #fff;
+  background: rgba(20, 22, 30, .85); border-radius: 4px; padding: 1px 5px; pointer-events: none; }
+#carte:not([data-zoom="4"]):not([data-zoom="5"]):not([data-zoom="6"]):not([data-zoom="7"]):not([data-zoom="8"]) .entree,
+#carte:not([data-zoom="5"]):not([data-zoom="6"]):not([data-zoom="7"]):not([data-zoom="8"]) .entree span { display: none; }
 #guide .etape .sur-carte { margin: 0 10px 6px; font-size: 12px; color: var(--doux); }
 #guide .etape input { accent-color: var(--vert); width: 16px; height: 16px; flex: none; }
 #guide .etape.faite summary span { color: var(--doux); text-decoration: line-through; }

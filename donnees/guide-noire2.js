@@ -25,6 +25,28 @@ GUIDES.noire2 = {
     "Super Bonbons : garde-les plutôt pour la fin, sauf vers le niveau 75 avant la 7e Arène. Utilise-les sur les niveaux impairs, qui demandent plus d'expérience.",
     "Mode Challenge : dresseurs plus malins, équipes plus fournies, niveaux augmentés (+1 jusqu'à Strykna, +2 jusqu'à Bardane, +3 jusqu'à Watson, +4 ensuite). L'auteur le déconseille."
   ],
+  // Mots du guide expliqués : [nom affiché, motif (expression régulière, sans tenir compte des majuscules), définition].
+  // Dans le texte des étapes, chaque mot reconnu est souligné et sa définition s'affiche au survol ou au toucher.
+  lexique: [
+    ["Ami-CS", "amis?-CS", "Pokémon capturé seulement pour porter des CS (Coupe, Surf…) ou compléter l'équipe. Il ne se bat pas : seul ton Pokémon principal combat."],
+    ["Changer de Pokémon (pivot)", "changer (encore )?de Pokémon|pivot", "Capturer un Pokémon sauvage pour en faire ton nouveau Pokémon principal. Possible seulement au début de la run, dans les lieux indiqués."],
+    ["Donjon", "donjons?", "Règle Kaizo : une fois entré, pas de soin au Centre Pokémon avant d'avoir fini, et pas de retour plus tard pour y combattre. Prépare-toi avant d'entrer."],
+    ["Trouée Cachée", "Trouées? Cachées?", "Petite clairière cachée derrière un passage dans les arbres. Elle contient un objet ou un Pokémon, qui réapparaît avec le temps."],
+    ["Guido", "Guido", "L'homme à l'entrée de chaque Arène. Il te donne une Fresh Water (une boisson qui soigne)."],
+    ["Fresh Water", "Fresh Water", "Boisson qui rend des PV, donnée par Guido à l'entrée des Arènes."],
+    ["Combat Duo", "Duos?", "Combat 2 contre 2. Avec un seul Pokémon dans l'équipe, la plupart des Duos ne se déclenchent pas."],
+    ["Combat multiple", "multiples?", "Combat à deux contre deux avec un allié (Matis, Bianca…) à tes côtés."],
+    ["Combat Triple", "Triples?", "Combat 3 contre 3 sur le terrain. Il faut 3 Pokémon dans l'équipe ; avec moins, ces dresseurs ne combattent pas."],
+    ["Combat Rotatif", "Rotatifs?", "Combat à 3 Pokémon où l'on fait tourner le Pokémon actif. Il faut 3 Pokémon dans l'équipe."],
+    ["Éleveur", "Éleveu(r|se)s?", "Dresseur qui te redéfie à chaque fois que tu repasses devant lui. En Kaizo, une revanche est interdite : contourne-le."],
+    ["Passage risqué", "passages? risqués?", "Endroit où un dresseur qui tourne sur lui-même peut te voir et te forcer au combat. Passe vite, au bon moment."],
+    ["Fausse Poké Ball", "Fausses? (Poké )?Balls?", "Poké Ball au sol qui est en réalité un Pokémon sauvage : elle lance un combat au lieu de donner un objet."],
+    ["Cherch'Objet", "Cherch'Objet", "Appareil qui sonne près des objets cachés. Donné par Bianca en route vers la Route 4."],
+    ["CT d'Arène", "CT d'Arène", "La CT donnée par le champion. En Kaizo, c'est la seule CT que tu as le droit d'apprendre après chaque badge."],
+    ["Patch d'intro", "patch d'intro(duction)?", "Patch qui saute le long début du jeu. Le guide suppose que tu l'utilises."],
+    ["Mode Challenge", "mode Challenge", "Difficulté plus élevée de Noire 2 : dresseurs plus forts et plus nombreux. L'auteur le déconseille."],
+    ["Kaizo", "Kaizo", "La difficulté IronMON où l'on garde un seul Pokémon principal, sans soin dans les donjons ni revanche."]
+  ],
   parties: [
     {
       nom: "Départ et premier badge",

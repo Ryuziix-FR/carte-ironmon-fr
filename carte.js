@@ -246,7 +246,8 @@ function decor(e, anime) {
 function construire() {
   for (const c of Object.values(couches)) map.removeLayer(c);
   couches = { entites: L.layerGroup(), decor: L.layerGroup(), passages: L.layerGroup(), liens: L.layerGroup(),
-    itineraires: L.layerGroup(), notes: L.layerGroup(), marque: L.layerGroup(), etiquettes: L.layerGroup() };
+    itineraires: L.layerGroup(), notes: L.layerGroup(), marque: L.layerGroup(), etiquettes: L.layerGroup(),
+    guide: L.layerGroup(), entrees: L.layerGroup() };
   entites = [];
   const [dw, dh] = jeu.tailles.dresseur, [ow, oh] = jeu.tailles.objet;
 
@@ -296,6 +297,15 @@ function construire() {
       if (reglages.liens === "toujours") couches.liens.addLayer(ligne);
     }
     couches.passages.addLayer(r);
+    // Sur l'extérieur, l'entrée des lieux rangés dans « Intérieurs » (grottes, arènes, bâtiments…) reste toujours
+    // visible, même quand les passages sont masqués : un clic mène dedans
+    if (rid !== regionId && !(region.etiquettes || []).length) {
+      const m = L.marker(ll(p.x + t / 2, p.y + t / 2), { keyboard: false,
+        icon: L.divIcon({ className: "entree", html: `<i>🚪</i><span>${echap(p.nom)}</span>`, iconSize: [18, 18], iconAnchor: [9, 9] }) });
+      m.bindTooltip("Entrée : " + p.nom + " (clic pour y aller)", { className: "bulle", direction: "top", offset: [0, -8] });
+      m.on("click", () => { changerRegion(rid, { c: ll(vx, vy), z: Math.max(map.getZoom(), 5) }); montrer(vx, vy); });
+      couches.entrees.addLayer(m);
+    }
   }
 
   // Noms des lieux posés sur la carte (les intérieurs)
@@ -329,9 +339,10 @@ function construire() {
   }
 
   dessinerNotes();
-  for (const c of ["itineraires", "etiquettes", "entites", "decor", "liens", "passages", "notes", "marque"]) couches[c].addTo(map);
+  for (const c of ["itineraires", "etiquettes", "entrees", "entites", "decor", "liens", "passages", "notes", "guide", "marque"]) couches[c].addTo(map);
   appliquerFiltres();
-  if (OBS && !params.has("reperes")) { map.removeLayer(couches.entites); map.removeLayer(couches.decor); }
+  dessinerEtape();
+  if (OBS && !params.has("reperes")) { for (const c of ["entites", "decor", "entrees", "guide"]) map.removeLayer(couches[c]); }
   majPanneau();
 }
 
@@ -551,9 +562,13 @@ function majGuide() {
     + g.regles.map((r) => `<li>${echap(r)}</li>`).join("");
   $("guide-source").innerHTML = (g.source.url ? `D'après le <a href="${echap(g.source.url)}" target="_blank" rel="noopener">« ${echap(g.source.nom)} »</a>` : `D'après le « ${echap(g.source.nom)} »`)
     + ` de ${echap(g.source.auteur)}, ${echap(g.adapte || "adapté à Soleil et réécrit en français")}.`;
+  // Lexique : les mots propres au guide, expliqués
+  $("guide-lexique").hidden = !(g.lexique || []).length;
+  $("guide-liste-lexique").innerHTML = (g.lexique || []).map(([nom, , def]) => `<dt>${echap(nom)}</dt><dd>${echap(def)}</dd>`).join("");
   const boite = $("guide-etapes");
   boite.innerHTML = "";
   let total = 0, faits = 0;
+  let dernierLieu = null;
   for (const partie of g.parties) {
     const h = document.createElement("h3");
     h.textContent = partie.nom;
@@ -576,11 +591,19 @@ function majGuide() {
         }
         if (nd || no) surCarte = `<p class="sur-carte">Sur la carte (${echap(lieu.nom)}) : ${nd} dresseur${nd > 1 ? "s" : ""}, ${no} objet${no > 1 ? "s" : ""}</p>`;
       }
+      const vus = new Set();  // chaque mot du lexique souligné une seule fois par étape
       d.innerHTML = `<summary><input type="checkbox" ${fait ? "checked" : ""} ${LECTURE ? "disabled" : ""}
           aria-label="Étape faite"> <span>${echap(e.titre)}</span></summary>
-        ${e.aller ? `<p class="aller"><b>Pour y aller</b> ${echap(e.aller)}</p>` : ""}
-        <ul>${e.points.map((pt) => `<li>${echap(pt)}</li>`).join("")}</ul>${surCarte}
+        ${e.aller ? `<p class="aller"><b>Pour y aller</b> ${avecTermes(e.aller, g, vus)}</p>` : ""}
+        <ul>${e.points.map((pt) => `<li>${avecTermes(pt, g, vus)}</li>`).join("")}</ul>${surCarte}
         ${lieu ? `<button class="bouton-petit voir-lieu">📍 Voir ${echap(lieu.nom)} sur la carte</button>` : ""}`;
+      // Ouvrir une étape montre son lieu sur la carte et y met en avant dresseurs et objets
+      const precedent = dernierLieu;
+      if (lieu) dernierLieu = lieu;
+      d.querySelector("summary").addEventListener("click", () => {
+        if (!d.open && lieu) setTimeout(() => montrerEtape(lieu, precedent), 0);
+      });
+      for (const t of d.querySelectorAll(".terme")) t.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); t.classList.toggle("ouvert"); };
       const c = d.querySelector("input");
       c.onclick = (ev) => ev.stopPropagation();
       c.onchange = () => {
@@ -589,8 +612,7 @@ function majGuide() {
         majGuide();
       };
       if (lieu) d.querySelector(".voir-lieu").onclick = () => {
-        if (lieu.region !== regionId) changerRegion(lieu.region);
-        allerA(ll(lieu.x, lieu.y), 4);
+        montrerEtape(lieu, precedent);
         if (matchMedia("(max-width: 640px)").matches) $("guide").classList.add("ferme");
       };
       boite.appendChild(d);
@@ -599,11 +621,70 @@ function majGuide() {
   $("guide-prog").style.width = (total ? 100 * faits / total : 0) + "%";
   $("guide-compte").textContent = `${faits} étape${faits > 1 ? "s" : ""} sur ${total}`;
 }
-$("btn-guide").onclick = () => $("guide").classList.toggle("ferme");
-$("fermer-guide").onclick = () => $("guide").classList.add("ferme");
+// Texte du guide -> HTML, avec les mots du lexique soulignés (définition au survol, ou au toucher sur téléphone)
+function avecTermes(texte, g, vus) {
+  const lex = g.lexique || [];
+  if (!lex.length) return echap(texte);
+  const re = new RegExp(`(?<![\\p{L}-])(${lex.map((t) => t[1]).join("|")})(?![\\p{L}])`, "giu");
+  let html = "", i = 0;
+  for (const m of texte.matchAll(re)) {
+    const t = lex.find((t) => new RegExp(`^(${t[1]})$`, "iu").test(m[0]));
+    html += echap(texte.slice(i, m.index));
+    if (t && !vus.has(t[0])) {
+      vus.add(t[0]);
+      html += `<span class="terme" tabindex="0" title="${echap(t[2])}">${echap(m[0])}<span class="def">${echap(t[2])}</span></span>`;
+    } else html += echap(m[0]);
+    i = m.index + m[0].length;
+  }
+  return html + echap(texte.slice(i));
+}
+
+// L'étape ouverte : son lieu à l'écran, ses dresseurs et objets entourés (combats obligatoires en rouge), et une
+// flèche depuis le lieu de l'étape d'avant quand il est sur la même carte
+let etapeVue = null;
+function montrerEtape(lieu, precedent) {
+  etapeVue = { lieu, precedent };
+  if (lieu.region !== regionId) changerRegion(lieu.region);  // reconstruit la carte, qui redessine l'étape
+  else dessinerEtape();
+  const boites = [];
+  couches.guide.eachLayer((c) => { if (c.options.zone) boites.push(c.getBounds()); });
+  if (boites.length) {
+    const b = boites.reduce((a, c) => a.extend(c), L.latLngBounds(boites[0].getSouthWest(), boites[0].getNorthEast()));
+    try { map.flyToBounds(b.pad(0.25), { maxZoom: 5, duration: 0.6 }); }
+    catch (err) { map.fitBounds(b.pad(0.25), { maxZoom: 5, animate: false }); }  // carte cachée ou de taille nulle
+  } else allerA(ll(lieu.x, lieu.y), 4);
+}
+function dessinerEtape() {
+  if (!couches.guide) return;
+  couches.guide.clearLayers();
+  if (!etapeVue || etapeVue.lieu.region !== regionId) return;
+  const { lieu, precedent } = etapeVue;
+  for (const e of entites) {
+    const x = e.genre === "dresseur" ? e.d : e.o;
+    if (!dansLieu(x.lieu, lieu.nom)) continue;
+    const oblig = e.genre === "dresseur" && (e.d.chef || e.d.rival);
+    const r = L.rectangle(e.rect.getBounds().pad(0.6), { zone: true, interactive: false, fill: false,
+      color: oblig ? "#ff3b3b" : "#ffffff", weight: oblig ? 4 : 2, dashArray: oblig ? null : "4 3", className: "zone-etape" });
+    couches.guide.addLayer(r);
+    if (oblig) couches.guide.addLayer(L.marker(r.getBounds().getNorthWest(), { interactive: false, keyboard: false,
+      icon: L.divIcon({ className: "etiquette-oblig", html: "<span>Obligatoire</span>", iconSize: null, iconAnchor: [0, 18] }) }));
+  }
+  // (pas dans les Intérieurs : leurs lieux y sont rangés côte à côte, sans lien avec leur vraie place)
+  if (precedent && precedent.region === regionId && precedent.nom !== lieu.nom && !(region.etiquettes || []).length) {
+    couches.guide.addLayer(L.polyline([ll(precedent.x, precedent.y), ll(lieu.x, lieu.y)],
+      { color: "#ffd166", weight: 4, dashArray: "10 8", opacity: 0.9, interactive: false, className: "fleche-etape" }));
+    couches.guide.addLayer(L.circleMarker(ll(lieu.x, lieu.y), { radius: 7, color: "#ffd166", weight: 3, fillColor: "#ffd166", fillOpacity: 0.8, interactive: false }));
+  }
+}
+function oublierEtape() { etapeVue = null; if (couches.guide) couches.guide.clearLayers(); }
+
+$("btn-guide").onclick = () => { $("guide").classList.toggle("ferme"); if ($("guide").classList.contains("ferme")) oublierEtape(); };
+$("fermer-guide").onclick = () => { $("guide").classList.add("ferme"); oublierEtape(); };
 
 function allerA(latlng, zoom, aEclairer) {
-  map.flyTo(latlng, Math.max(map.getZoom(), zoom || 5), { duration: 0.6 });
+  // L'animation échoue (« Invalid LatLng NaN ») quand la carte est cachée ou de taille nulle : on saute alors directement
+  try { map.flyTo(latlng, Math.max(map.getZoom(), zoom || 5), { duration: 0.6 }); }
+  catch (err) { map.setView(latlng, Math.max(map.getZoom(), zoom || 5), { animate: false }); }
   if (aEclairer) map.once("moveend", () => eclair(aEclairer));
 }
 
