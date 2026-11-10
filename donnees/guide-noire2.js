@@ -164,7 +164,7 @@ GUIDES.noire2 = {
           "Obligatoire : va au fond (où se tenait Inezia dans Noire) pour un Anti-Para et ouvrir la nouvelle Arène.",
           "Si ce n'est pas fait, va voir le randonneur devant la Grande Roue."
         ] },
-        { id: "rotombourg", titre: "Rotombourg", points: [
+        { id: "rotombourg", titre: "Rotombourg", lieu: "rotombourg", points: [
           "En chemin, un Duo avec un allié : il peut mal tourner si les deux adversaires visent ton Pokémon.",
           "Super Bonbon dans la maison en bas à droite.",
           "Le week-end, l'homme d'affaires à droite du pont échange un Morceau d'Étoile contre un PP Plus."
