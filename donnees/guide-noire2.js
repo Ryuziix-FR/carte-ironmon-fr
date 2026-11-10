@@ -27,6 +27,24 @@ GUIDES.noire2 = {
   ],
   // Mots du guide expliqués : [nom affiché, motif (expression régulière, sans tenir compte des majuscules), définition].
   // Dans le texte des étapes, chaque mot reconnu est souligné et sa définition s'affiche au survol ou au toucher.
+  // Combats que le guide dit obligatoires, en plus des champions, du Conseil 4 et des rivaux (déjà marqués) :
+  // { lieu: lieu exact sur la carte, nom: motif du nom, niv: niveau à trouver dans l'équipe (facultatif) }.
+  // Ils sont marqués en rouge sur la carte. Ceux que la carte ne montre pas (Charles au Pont Yoneuve, finale du PWT,
+  // combats déclenchés par l'histoire sans personnage fixe) restent seulement écrits dans les étapes.
+  obligatoires: [
+    { lieu: "Ondes-sur-Mer", nom: "Sbire", pour: "sbire des docks : il donne la CS Coupe" },
+    { lieu: "Route 20", nom: "Sbire", pour: "sbire au sud de la Route 20, avant le bateau pour Volucité" },
+    { lieu: "Route 4", nom: "Nikolaï", pour: "Nikolaï près du mur, Route 4" },
+    { lieu: "Méanville", nom: "Sbire", niv: 41, pour: "les 2 sbires à la sortie de Méanville" },
+    { lieu: "Port Yoneuve", nom: "Carmine", pour: "Carmine, dans la maison au nord" },
+    { lieu: "Janusia", nom: "Sbire|Lilien|Ombre", pour: "Janusia gelée : 3 sbires et 2 admins" },
+    { lieu: "Frégate Plasma", nom: "Lilien|Ombre|Nikolaï", pour: "admins de la Frégate (Lilien, Nikolaï, Trio de l'ombre)" }
+  ],
+  // Lieux que le guide traite comme des donjons (pas de soin avant la fin, pas de retour pour y combattre)
+  donjons: ["Maison de Goyah", "QG de Game Freak", "Compagnie de Combat", "Égouts de Volucité", "Royal Unys",
+    "Château Enfoui", "Montagnes russes (ancienne Arène de Méanville)", "Frégate Plasma", "Grotte Parsemille",
+    "Chemin Enfoui", "Grotte Électrolithe", "Tour des Cieux", "Mont Renenvers", "Manoir de l'Étrange",
+    "Centre Commercial", "Stades de Méanville", "Grotte Littorale", "Grotte Cyclopéenne", "Route Victoire"],
   lexique: [
     ["Ami-CS", "amis?-CS", "Pokémon capturé seulement pour porter des CS (Coupe, Surf…) ou compléter l'équipe. Il ne se bat pas : seul ton Pokémon principal combat."],
     ["Changer de Pokémon (pivot)", "changer (encore )?de Pokémon|pivot", "Capturer un Pokémon sauvage pour en faire ton nouveau Pokémon principal. Possible seulement au début de la run, dans les lieux indiqués."],
@@ -69,7 +87,7 @@ GUIDES.noire2 = {
           "Ce n'est pas un donjon, et c'est le meilleur endroit du jeu pour changer de Pokémon (7 choix). Grâce au rattrapage d'expérience de la 5G, un niveau 8 suffit en général.",
           "Deuxième combat contre Matis. Une Potion t'est donnée après, et un sbire Plasma donne la CT21."
         ] },
-        { id: "pavonnay-arene", titre: "Retour à Pavonnay : Goyah et l'Arène", aller: "Repars vers l'ouest (Route 20 puis Route 19) jusqu'à Pavonnay : la maison de Goyah, puis l'Arène de Tcheren.", lieu: "pavonnay", points: [
+        { id: "pavonnay-arene", donjon: true, titre: "Retour à Pavonnay : Goyah et l'Arène", aller: "Repars vers l'ouest (Route 20 puis Route 19) jusqu'à Pavonnay : la maison de Goyah, puis l'Arène de Tcheren.", lieu: "pavonnay", points: [
           "Chez Goyah : 2 enfants à battre (il te soigne entre les deux) pour 5 Baies Oran.",
           "Arène : un enfant donne une Défense Spé. Tcheren donne la CT83, la CT d'Arène. Avec le patch d'intro tu reçois une seconde CT : seule la CT83 compte comme CT d'Arène en Kaizo.",
           "Les Repousses sont maintenant en vente : fais-en un bon stock."
@@ -120,21 +138,21 @@ GUIDES.noire2 = {
           "Quelques dresseurs pour l'expérience.",
           "L'Éleveuse de la route principale te redéfie à chaque passage : longe le randonneur par la gauche pour passer sans être vu."
         ] },
-        { id: "gamefreak", titre: "Game Freak, 22e étage", aller: "Retour dans Volucité : immeuble de Game Freak, 22e étage (donjon facultatif).", lieu: "volucite", points: [
+        { id: "gamefreak", donjon: true, titre: "Game Freak, 22e étage", aller: "Retour dans Volucité : immeuble de Game Freak, 22e étage (donjon facultatif).", lieu: "volucite", points: [
           "Donjon facultatif : 2 dresseurs. L'un a des Baies Oran et une Super Potion, l'autre des Restes et une Super Potion.",
           "N'oublie pas l'objet sous le bureau de gauche."
         ] },
-        { id: "compagnie", titre: "Compagnie de Combat", aller: "Dans Volucité : 47e et 55e étages de la Compagnie de Combat (facultatif). Le 1er étage n'a pas de dresseur.", lieu: "volucite", points: [
+        { id: "compagnie", donjon: true, titre: "Compagnie de Combat", aller: "Dans Volucité : 47e et 55e étages de la Compagnie de Combat (facultatif). Le 1er étage n'a pas de dresseur.", lieu: "volucite", points: [
           "Facultative, et plus facile que les autres donjons du coin.",
           "Multi Exp au 1er étage ; Chrono Ball, Rapide Ball et un objet tenu donnés au 47e."
         ] },
-        { id: "egouts", titre: "Égouts de Volucité", aller: "D'abord, va devant l'Arène de Volucité et parle à Guido : Iris t'emmène vers les égouts. N'entre pas dans la grotte d'où sort Nikolaï (c'est le Chemin Enfoui, pour plus tard).", lieu: "egoutsdevolucite", points: [
+        { id: "egouts", donjon: true, titre: "Égouts de Volucité", aller: "D'abord, va devant l'Arène de Volucité et parle à Guido : Iris t'emmène vers les égouts. N'entre pas dans la grotte d'où sort Nikolaï (c'est le Chemin Enfoui, pour plus tard).", lieu: "egoutsdevolucite", points: [
           "Va d'abord voir le guide devant l'Arène : Iris t'emmène aux égouts.",
           "Matis te suit au début : en Kaizo, file droit au Duo contre la Team Plasma sans toucher aux autres dresseurs. Il te soigne ensuite.",
           "Ne combats pas le médecin. N'entre pas dans la grotte d'où sort Nikolaï : c'est le Chemin Enfoui, pour plus tard.",
           "Beaucoup d'objets cachés ne sont pas encore accessibles (le Cherch'Objet sonne sans arrêt) : on reviendra après Surf."
         ] },
-        { id: "royal", titre: "Royal Unys", aller: "Le bateau Royal Unys part de Volucité, seulement le soir (horaires plus bas).", lieu: "volucite", points: [
+        { id: "royal", donjon: true, titre: "Royal Unys", aller: "Le bateau Royal Unys part de Volucité, seulement le soir (horaires plus bas).", lieu: "volucite", points: [
           "Seulement le soir : 17 h-18 h 59 en hiver, 17 h-19 h 59 au printemps et en automne, 19 h-20 h 59 en été.",
           "5 minutes pour battre tous les dresseurs ; seul le temps passé à marcher compte (lis le guide pendant un dialogue).",
           "Les employés près de la première salle bleue (gauche) et rouge (droite) disent où sont les dresseurs. Les supporters en orange ne sont jamais des dresseurs ; les bonnes le sont toujours.",
@@ -179,10 +197,10 @@ GUIDES.noire2 = {
           "Deux Rangers donnent chacun une baie (dont une Baie Kika). Une Trouée Cachée est au nord du Ranger à la Baie Kika.",
           "Ignore le Cherch'Objet : les objets du haut de la cascade viendront plus tard."
         ] },
-        { id: "chateau", titre: "Château Enfoui", aller: "Au fond du Désert Délassant (retour par la Route 4).", lieu: "chteauenfoui", points: [
+        { id: "chateau", donjon: true, titre: "Château Enfoui", aller: "Au fond du Désert Délassant (retour par la Route 4).", lieu: "chteauenfoui", points: [
           "Donjon facultatif, pas difficile sur le papier, mais il a déjà coûté des runs à l'auteur."
         ] },
-        { id: "montagnes", titre: "Ancienne Arène de Méanville (montagnes russes)", aller: "Dans Méanville : les montagnes russes (ancienne Arène). Va tout au fond pour l'Antiparalysie, ça débloque la nouvelle Arène. Passe aussi voir le randonneur devant la grande roue.", lieu: "meanville", points: [
+        { id: "montagnes", donjon: true, titre: "Ancienne Arène de Méanville (montagnes russes)", aller: "Dans Méanville : les montagnes russes (ancienne Arène). Va tout au fond pour l'Antiparalysie, ça débloque la nouvelle Arène. Passe aussi voir le randonneur devant la grande roue.", lieu: "meanville", points: [
           "Obligatoire : va au fond (où se tenait Inezia dans Noire) pour un Anti-Para et ouvrir la nouvelle Arène.",
           "Si ce n'est pas fait, va voir le randonneur devant la Grande Roue."
         ] },
@@ -220,7 +238,7 @@ GUIDES.noire2 = {
           "Arène énorme où l'on se perd facilement : surveille tes PP, prends l'Eau Fraîche et bats bien les 7 dresseurs.",
           "Bardane utilise une Hyper Potion et donne la CT78."
         ] },
-        { id: "pwt", titre: "PWT et Frégate Plasma (1re fois)", aller: "Au sud de Port Yoneuve (le PWT). N'entre pas encore dans le Chemin Enfoui. Ensuite, la Frégate Plasma au sud, puis remonte au Centre Météo de la Route 6 pour recevoir Surf.", lieu: "pwt", points: [
+        { id: "pwt", donjon: true, titre: "PWT et Frégate Plasma (1re fois)", aller: "Au sud de Port Yoneuve (le PWT). N'entre pas encore dans le Chemin Enfoui. Ensuite, la Frégate Plasma au sud, puis remonte au Centre Météo de la Route 6 pour recevoir Surf.", lieu: "pwt", points: [
           "Les combats du PWT sont au niveau 25 : simple formalité. Finale contre Nikolaï.",
           "Le professeur des capacités oubliées (stand de gauche) demande des Écailles Cœur. L'ouvrier de l'entrepôt frigorifique, à l'est, donne un objet tenu.",
           "Pas encore le Chemin Enfoui : il faut Surf.",
@@ -231,16 +249,16 @@ GUIDES.noire2 = {
           "Routes 19 et 20 : objets accessibles avec Surf ; sur la Route 20, les Rangers d'automne donnent une Baie Sitrus et deux autres baies.",
           "Trouée Cachée vers la fin du labyrinthe du Ranch d'Amaillide, puis un objet au nord-ouest du Centre d'Ondes-sur-Mer (absent de certaines cartes, mais bien là)."
         ] },
-        { id: "grotte-parsemille", titre: "Route 6 avec Surf et Grotte Parsemille", aller: "Vole à Port Yoneuve et remonte la Route 6 en Surf : la Grotte Parsemille est au bout (une Trouée Cachée juste avant).", lieu: "grotteparsemille", points: [
+        { id: "grotte-parsemille", donjon: true, titre: "Route 6 avec Surf et Grotte Parsemille", aller: "Vole à Port Yoneuve et remonte la Route 6 en Surf : la Grotte Parsemille est au bout (une Trouée Cachée juste avant).", lieu: "grotteparsemille", points: [
           "Route 6 : objets accessibles avec Surf, scène avec Cobaltium, Trouée Cachée juste avant la grotte.",
           "Grotte Parsemille : sombre, facultative, dresseurs forts et malins. Un seul est nécessaire pour ouvrir le gros du donjon."
         ] },
-        { id: "chemin-enfoui", titre: "Chemin Enfoui", aller: "Entrée depuis la zone du PWT, au sud de Port Yoneuve. Ensuite, facultatif : les Égouts de Volucité, sans soin entre les deux.", lieu: "cheminenfoui", points: [
+        { id: "chemin-enfoui", donjon: true, titre: "Chemin Enfoui", aller: "Entrée depuis la zone du PWT, au sud de Port Yoneuve. Ensuite, facultatif : les Égouts de Volucité, sans soin entre les deux.", lieu: "cheminenfoui", points: [
           "Donjon facultatif, 10 dresseurs. N'oublie pas la partie qui ressemble au Château Enfoui : quelques objets.",
           "Au printemps ou en été, les Égouts de Volucité (vus comme la suite du même donjon, sans soin entre les deux) donnent encore objets et dresseurs. Les 3 derniers dresseurs se font d'affilée, à la fin, pour un objet unique.",
           "Le scientifique des égouts donne au hasard un Antidote, un Total Soin ou un Guérison."
         ] },
-        { id: "electrolithe", titre: "Grotte Électrolithe", aller: "Retourne à Port Yoneuve et remonte la Route 6 vers le nord (attention à l'éleveuse) : la Grotte Électrolithe est au bout. Aucun combat n'y est obligatoire.", lieu: "grotteelectrolithe", points: [
+        { id: "electrolithe", donjon: true, titre: "Grotte Électrolithe", aller: "Retourne à Port Yoneuve et remonte la Route 6 vers le nord (attention à l'éleveuse) : la Grotte Électrolithe est au bout. Aucun combat n'y est obligatoire.", lieu: "grotteelectrolithe", points: [
           "Très long et dangereux, mais aucun combat obligatoire et aucun objet derrière un dresseur.",
           "Laisse tes autres Pokémon au PC : sans 3 Pokémon, les deux pires combats (Rotatif et Triple) disparaissent.",
           "Le médecin du sous-sol est interdit en Kaizo. Les Rangers donnent des baies ; une Pépite et une Grosse Pépite sont aussi données."
@@ -254,7 +272,7 @@ GUIDES.noire2 = {
           "Évite l'Éleveur des hauteurs par les hautes herbes ou les ponts ; les passerelles évitent le Duo.",
           "Deux fausses balles. Trouée Cachée à côté de la maison à l'ouest."
         ] },
-        { id: "tour-cieux", titre: "Tour des Cieux", aller: "Au bout de la Route 7. Parle à la professeure au rez-de-chaussée avant de monter.", lieu: "tourdescieux", points: [
+        { id: "tour-cieux", donjon: true, titre: "Tour des Cieux", aller: "Au bout de la Route 7. Parle à la professeure au rez-de-chaussée avant de monter.", lieu: "tourdescieux", points: [
           "Parle à la professeure au rez-de-chaussée : un engrais, et surtout ça ouvre la suite après l'Arène.",
           "Aucun dresseur obligatoire, mais quelques passages risqués devant des CT. Le médecin du 3e est interdit en Kaizo."
         ] },
@@ -271,7 +289,7 @@ GUIDES.noire2 = {
           "Avion depuis le hangar de Parsemille (le garçon d'à côté signale une CT au bord sud de la piste).",
           "Un objet tenu donné par la vieille dame du Centre, CT57 dans la maison au sud-ouest. Le maître des capacités à Tesson Bleu est ici."
         ] },
-        { id: "renenvers", titre: "Mont Renenvers", aller: "Sors d'Arpentières : une courte route mène au Mont Renenvers (le Manoir de l'Étrange est à côté, pour plus tard). Dès que Bianca te rejoint, va à droite et fonce vers la sortie.", lieu: "montrenenvers", points: [
+        { id: "renenvers", donjon: true, titre: "Mont Renenvers", aller: "Sors d'Arpentières : une courte route mène au Mont Renenvers (le Manoir de l'Étrange est à côté, pour plus tard). Dès que Bianca te rejoint, va à droite et fonce vers la sortie.", lieu: "montrenenvers", points: [
           "Dehors : une CT en haut à gauche du Manoir de l'Étrange (manoir à garder pour plus tard).",
           "Dedans : Bianca te soigne mais impose un Duo. En Kaizo, dès qu'elle te rejoint, file à droite vers la sortie (deux Techniciens forcés en route), parle-lui, puis reviens faire le reste.",
           "Un seul Duo est obligatoire ; les Triples et Rotatifs ont des trajets fixes. Les Rangers donnent des Baies Kika ; deux objets sont dehors près de la sortie."
@@ -311,11 +329,11 @@ GUIDES.noire2 = {
         { id: "janusia", titre: "Janusia", aller: "Au bout de la Route 11. Rien d'urgent ici avant l'Arène : continue vers la Route 9.", lieu: "janusia", points: [
           "Boule Fumée dans la maison à côté de l'Arène, et deux objets tenus chez Watson."
         ] },
-        { id: "route9", titre: "Route 9 et Centre Commercial", aller: "Depuis Janusia. Le Centre Commercial R9 est sur la route.", lieu: "route9", points: [
+        { id: "route9", donjon: true, titre: "Route 9 et Centre Commercial", aller: "Depuis Janusia. Le Centre Commercial R9 est sur la route.", lieu: "route9", points: [
           "Un objet est gardé par le Duo. Trouée Cachée à l'ouest du centre commercial.",
           "Centre Commercial : petit donjon facultatif ; son rayon vend 2 CT."
         ] },
-        { id: "manoir", titre: "Manoir de l'Étrange", aller: "Vole à Arpentières : le Manoir est sur la courte route vers le Mont Renenvers.", lieu: "manoirdeletrange", points: [
+        { id: "manoir", donjon: true, titre: "Manoir de l'Étrange", aller: "Vole à Arpentières : le Manoir est sur la courte route vers le Mont Renenvers.", lieu: "manoirdeletrange", points: [
           "Facultatif : les salles changent à chaque passage par la bibliothèque. Visite tout ce qui est ouvert à chaque fois.",
           "Une Plume Lune est donnée."
         ] },
@@ -346,7 +364,7 @@ GUIDES.noire2 = {
           "Bon moment pour les Super Bonbons. Pas encore la Grotte Cyclopéenne au bout.",
           "Les balles absentes de la carte sont fausses (une sous une passerelle près du dernier randonneur). Trouée Cachée tout au nord-est."
         ] },
-        { id: "stades", titre: "Stades de Méanville", aller: "Vole à Méanville : Grand Stade et Petit Terrain. S'ils sont fermés (match en cours), avance l'horloge de quelques heures.", lieu: "meanville", points: [
+        { id: "stades", donjon: true, titre: "Stades de Méanville", aller: "Vole à Méanville : Grand Stade et Petit Terrain. S'ils sont fermés (match en cours), avance l'horloge de quelques heures.", lieu: "meanville", points: [
           "Deux donjons facultatifs de 4 combats (3 seuls, 1 Duo). Chaque athlète donne une Hyper Potion.",
           "Les équipes changent avec l'heure, le jour et la saison. Stade fermé pendant un match : décale l'horloge de quelques heures."
         ] },
@@ -354,17 +372,17 @@ GUIDES.noire2 = {
           "Beaucoup de dresseurs mais aucun combat multiple. Eau Fraîche à l'entrée.",
           "Amana donne la CT55."
         ] },
-        { id: "littorale", titre: "Grotte Littorale et Frégate Plasma", aller: "D'abord, récupère la Machine de Nikolaï sur la Route 22 (sinon tu restes bloqué au fond de la grotte). Puis descends la Route 21 vers le sud jusqu'à la Grotte Littorale : elle mène à la Frégate, sans soin entre les deux.", lieu: "grottelittorale", points: [
+        { id: "littorale", donjon: true, titre: "Grotte Littorale et Frégate Plasma", aller: "D'abord, récupère la Machine de Nikolaï sur la Route 22 (sinon tu restes bloqué au fond de la grotte). Puis descends la Route 21 vers le sud jusqu'à la Grotte Littorale : elle mène à la Frégate, sans soin entre les deux.", lieu: "grottelittorale", points: [
           "Prends d'abord l'appareil de Nikolaï sur la Route 22, sinon tu restes bloqué au fond de la grotte.",
           "Grotte et frégate forment un seul gros donjon, sans soin entre les deux. Obligatoire : 4 combats, dont deux multiples.",
           "Les Rangers donnent des baies.",
           "Frégate : presque chaque dresseur hors trajet fixe est un passage risqué. Après le combat contre Lilien et son sbire, tu es éjecté et les dresseurs restants disparaissent."
         ] },
-        { id: "cyclopeenne", titre: "Grotte Cyclopéenne", aller: "Au bout de la Route 22.", lieu: "grottecyclopeenne", points: [
+        { id: "cyclopeenne", donjon: true, titre: "Grotte Cyclopéenne", aller: "Au bout de la Route 22.", lieu: "grottecyclopeenne", points: [
           "Intérieur : quelques objets. L'extérieur sud (fermé par Force) a d'autres objets et une Trouée Cachée près des escaliers de la plage.",
           "Cratère : un dresseur, des Rappels Max donnés. Puis la frégate, encore."
         ] },
-        { id: "fregate3", titre: "Frégate Plasma (la dernière)", aller: "Traverse le cratère de la Grotte Cyclopéenne (glace) jusqu'à la Frégate.", lieu: "fregateplasma", points: [
+        { id: "fregate3", donjon: true, titre: "Frégate Plasma (la dernière)", aller: "Traverse le cratère de la Grotte Cyclopéenne (glace) jusqu'à la Frégate.", lieu: "fregateplasma", points: [
           "Le Duo du début (6 Pokémon) se fait comme deux combats seuls si ton ami-CS est K.O. : provoque un Duo sauvage, laisse-le tomber, fuis. Sans ami-CS, tu rates 3 objets.",
           "Commence par la gauche : tous les objets avec un seul passage risqué.",
           "Mots de passe possibles : 2202, 7707, 9909, Reshiram ou Zekrom.",
@@ -397,7 +415,7 @@ GUIDES.noire2 = {
         { id: "doubles", titre: "Avant la Route Victoire", aller: "Retourne affronter les Duos et Triples évités : c'est le moment, juste avant la Route Victoire.", lieu: "route23", points: [
           "Bon moment pour faire les Duos et Triples évités jusqu'ici, surtout si un niveau est proche."
         ] },
-        { id: "route-victoire", titre: "Route Victoire", aller: "Au bout de la Route 23. Prends la sortie nord dans la Grotte 2, traverse la Grotte 3 dans le noir, fonce jusqu'au rival à la fin, puis reviens pour le reste.", lieu: "routevictoire", points: [
+        { id: "route-victoire", donjon: true, titre: "Route Victoire", aller: "Au bout de la Route 23. Prends la sortie nord dans la Grotte 2, traverse la Grotte 3 dans le noir, fonce jusqu'au rival à la fin, puis reviens pour le reste.", lieu: "routevictoire", points: [
           "La plus longue de la série : 25 combats, rival à la fin, sans médecin en Kaizo. Seuls 5 combats sont obligatoires.",
           "Itinéraire conseillé : sortie nord de la Grotte 2, traverse le noir de la Grotte 3, fonce au rival, puis reviens chercher le reste.",
           "Force obligatoire ; Surf, Coupe, Cascade et Flash ouvrent des objets ou des raccourcis. Le Duo garde une CT ; les Rangers donnent des Baies Fraive et Ceriz ; CT24 donnée."

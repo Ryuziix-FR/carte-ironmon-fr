@@ -171,6 +171,14 @@ function changerRegion(rid, vue) {
 }
 
 // ---------- Dresseurs, objets, passages, itinéraires, notes ----------
+// Combat obligatoire : champions, Conseil 4, rivaux, et ceux que le guide du jeu dit obligatoires (guide.obligatoires)
+function regleObligatoire(d) {
+  const g = (window.GUIDES || {})[jeuId];
+  return ((g && g.obligatoires) || []).find((r) => r.lieu === d.lieu && new RegExp(r.nom).test(d.nom) && (!r.niv || (d.niv || []).includes(r.niv)));
+}
+const estObligatoire = (d) => !!(d.chef || d.rival || regleObligatoire(d));
+// Lieux traités comme des donjons par le guide (guide.donjons)
+const estDonjon = (nom) => (((window.GUIDES || {})[jeuId] || {}).donjons || []).includes(nom);
 function bulleDresseur(d, k) {
   const fait = etat.fait[k] ? '<div class="ok">✔ Battu</div>' : "";
   const mouv = d.marche ? "🚶 Se déplace" : d.tourne ? "🔄 Se retourne" : "";
@@ -178,7 +186,9 @@ function bulleDresseur(d, k) {
     + `<div>${d.nb} Pokémon — niv. <span class="niv">${d.niv.join(", ")}</span></div>`
     + (d.approx ? '<div class="l">Combat scénarisé : bon lieu, position sur la carte approximative</div>' : "")
     + (d.variantes || []).map((v) => `<div class="l">Ou, selon la version ou l'avancée : ${echap(v.nom)} — niv. ${v.niv.join(", ")}</div>`).join("")
-    + (mouv ? `<div class="l">${mouv}</div>` : "") + fait;
+    + (mouv ? `<div class="l">${mouv}</div>` : "")
+    + (estObligatoire(d) ? `<div class="oblig">Combat obligatoire${regleObligatoire(d) ? " (d'après le guide : " + echap(regleObligatoire(d).pour) + ")" : ""}</div>` : "")
+    + fait;
 }
 const NOMS_OBJETS = { objet: "Objet", ct: "CT", cache: "Objet caché" };
 function bulleObjet(o, k) {
@@ -191,8 +201,9 @@ function bulleObjet(o, k) {
 function styleEntite(e) {
   const fait = !!etat.fait[e.cle];
   if (e.genre === "dresseur") {
-    const coul = e.d.chef ? "#f4c542" : e.d.rival ? "#ff4d6d" : "#ff9f1c";
-    return { color: fait ? "#47c46b" : coul, weight: e.d.chef ? 3 : 2, opacity: fait ? 0.9 : 1,
+    const oblig = estObligatoire(e.d);
+    const coul = oblig ? "#ff2d2d" : "#ff9f1c";
+    return { color: fait ? "#47c46b" : coul, weight: oblig ? 3 : 2, opacity: fait ? 0.9 : 1,
       fillColor: fait ? "#47c46b" : coul, fillOpacity: fait ? 0.35 : 0.12 };
   }
   const coul = { objet: "#3fa9f5", ct: "#b06cff", cache: "#ffe14d" }[e.o.type];
@@ -210,6 +221,7 @@ function badge(e) {
   if (e.genre === "dresseur") {
     if (e.d.chef) return "<i>👑</i>";
     if (e.d.rival) return "<i>⚔️</i>";
+    if (estObligatoire(e.d)) return "<i>❗</i>";
     return '<img src="images/icones/dresseur.png" alt="">';
   }
   return `<img src="images/icones/${{ objet: "PokeballItem", ct: "TMItem", cache: "HiddenItem" }[e.o.type]}.png" alt="">`;
@@ -301,8 +313,8 @@ function construire() {
     // visible, même quand les passages sont masqués : un clic mène dedans
     if (rid !== regionId && !(region.etiquettes || []).length) {
       const m = L.marker(ll(p.x + t / 2, p.y + t / 2), { keyboard: false,
-        icon: L.divIcon({ className: "entree", html: `<i>🚪</i><span>${echap(p.nom)}</span>`, iconSize: [18, 18], iconAnchor: [9, 9] }) });
-      m.bindTooltip("Entrée : " + p.nom + " (clic pour y aller)", { className: "bulle", direction: "top", offset: [0, -8] });
+        icon: L.divIcon({ className: "entree" + (estDonjon(p.nom) ? " donjon" : ""), html: `<i>${estDonjon(p.nom) ? "⚠️" : "🚪"}</i><span>${echap(p.nom)}${estDonjon(p.nom) ? " · donjon" : ""}</span>`, iconSize: [18, 18], iconAnchor: [9, 9] }) });
+      m.bindTooltip("Entrée : " + p.nom + (estDonjon(p.nom) ? " — DONJON : pas de soin avant d'avoir fini" : "") + " (clic pour y aller)", { className: "bulle", direction: "top", offset: [0, -8] });
       m.on("click", () => { changerRegion(rid, { c: ll(vx, vy), z: Math.max(map.getZoom(), 5) }); montrer(vx, vy); });
       couches.entrees.addLayer(m);
     }
@@ -312,14 +324,14 @@ function construire() {
   panneaux = [];
   const poserPanneau = (x, y, nom, classe) => {
     const m = L.marker(ll(x, y), { keyboard: false,
-      icon: L.divIcon({ className: classe, html: `<span>${echap(nom)}</span>`, iconSize: null, iconAnchor: [0, 0] }) });
+      icon: L.divIcon({ className: classe, html: `<span>${echap(nom)}${/ donjon/.test(classe) ? " <b>⚠ Donjon</b>" : ""}</span>`, iconSize: null, iconAnchor: [0, 0] }) });
     m.bindTooltip(() => bulleLieu(nom), { className: "bulle", direction: "top", offset: [0, -10] });
     m.on("click", () => m.toggleTooltip());
     m.on("add", () => marquerFini(m, nom));
     panneaux.push({ m, nom });
     couches.etiquettes.addLayer(m);
   };
-  for (const e of region.etiquettes || []) poserPanneau(e.x, e.y, e.texte, "etiquette-lieu");
+  for (const e of region.etiquettes || []) poserPanneau(e.x, e.y, e.texte, "etiquette-lieu" + (estDonjon(e.texte) ? " donjon" : ""));
   // Sur l'extérieur, un panneau par ville et par route (pas les étages ni les intérieurs)
   if (!(region.etiquettes || []).length) {
     const vus = new Set();
@@ -593,7 +605,7 @@ function majGuide() {
       }
       const vus = new Set();  // chaque mot du lexique souligné une seule fois par étape
       d.innerHTML = `<summary><input type="checkbox" ${fait ? "checked" : ""} ${LECTURE ? "disabled" : ""}
-          aria-label="Étape faite"> <span>${echap(e.titre)}</span></summary>
+          aria-label="Étape faite"> <span>${echap(e.titre)}</span>${e.donjon ? '<em class="tag-donjon" title="Donjon : pas de soin au Centre Pokémon avant la fin, pas de retour pour y combattre">Donjon</em>' : ""}</summary>
         ${e.aller ? `<p class="aller"><b>Pour y aller</b> ${avecTermes(e.aller, g, vus)}</p>` : ""}
         <ul>${e.points.map((pt) => `<li>${avecTermes(pt, g, vus)}</li>`).join("")}</ul>${surCarte}
         ${lieu ? `<button class="bouton-petit voir-lieu">📍 Voir ${echap(lieu.nom)} sur la carte</button>` : ""}`;
@@ -662,7 +674,7 @@ function dessinerEtape() {
   for (const e of entites) {
     const x = e.genre === "dresseur" ? e.d : e.o;
     if (!dansLieu(x.lieu, lieu.nom)) continue;
-    const oblig = e.genre === "dresseur" && (e.d.chef || e.d.rival);
+    const oblig = e.genre === "dresseur" && estObligatoire(e.d);
     const r = L.rectangle(e.rect.getBounds().pad(0.6), { zone: true, interactive: false, fill: false,
       color: oblig ? "#ff3b3b" : "#ffffff", weight: oblig ? 4 : 2, dashArray: oblig ? null : "4 3", className: "zone-etape" });
     couches.guide.addLayer(r);
