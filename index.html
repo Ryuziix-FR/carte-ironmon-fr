@@ -6,7 +6,7 @@
 <title>Carte IronMON FR</title>
 <link rel="icon" href="images/icones/pokeball.png">
 <link rel="stylesheet" href="lib/leaflet/leaflet.css?v=c02c12fe">
-<link rel="stylesheet" href="carte.css?v=f96a49a1">
+<link rel="stylesheet" href="carte.css?v=27a051ef">
 </head>
 <body>
 <div id="carte"></div>
@@ -96,6 +96,49 @@
     <label><input type="checkbox" id="auto-reset"> Tout décocher à chaque nouvelle run</label>
   </section>
 
+  <!-- Cimetière : un point par défaite, lu dans l'historique du tracker (rien n'est envoyé nulle part) -->
+  <section id="section-cimetiere">
+    <h3>💀 Cimetière</h3>
+    <p class="aide">Un point par défaite, à l'endroit où ta run s'est arrêtée, lu dans l'historique de ton tracker IronMON (jeux DS sur BizHawk).</p>
+    <div id="cimetiere-relier" hidden>
+      <button id="btn-relier-tracker" class="bouton">💀 Relier mon tracker</button>
+      <p id="cimetiere-etat" class="aide"></p>
+      <details class="aide">
+        <summary>Comment faire ? (une seule fois, 1 minute)</summary>
+        <ol>
+          <li>Clique <b>Relier mon tracker</b> et choisis le dossier de ton tracker IronMON : celui où se trouvent
+            <code>Ironmon-Tracker.lua</code> et le dossier <code>savedData</code>.</li>
+          <li>Le navigateur demande s'il peut lire ce dossier : accepte. Rien n'est envoyé, tout reste sur ton PC.</li>
+          <li>Tes défaites apparaissent, et chaque nouvelle s'ajoute toute seule tant que la carte est ouverte.</li>
+        </ol>
+        <p>Marche avec Chrome ou Edge sur ordinateur. Le tracker note une défaite à chaque run perdue après le labo.</p>
+      </details>
+    </div>
+    <p id="cimetiere-impossible" class="aide" hidden>Pour relier ton tracker, ouvre la carte dans Chrome ou Edge sur ordinateur.</p>
+    <p id="cimetiere-erreur" class="aide" hidden></p>
+    <div id="cimetiere-donnees" hidden>
+      <p id="cimetiere-partage" class="aide" hidden>👀 Cimetière partagé, en lecture seule. <a href="./">Revenir à ma carte</a></p>
+      <label id="ligne-voir-cimetiere"><input type="checkbox" id="voir-cimetiere"> Un point par défaite sur la carte</label>
+      <p id="cimetiere-resume" class="aide"></p>
+      <div id="cimetiere-versions"></div>
+      <ul id="cimetiere-lieux" class="liste"></ul>
+      <p id="cimetiere-perdus" class="aide" hidden></p>
+      <button id="btn-lien-cimetiere" class="bouton" hidden>🔗 Partager mon cimetière</button>
+    </div>
+    <p id="cimetiere-obs-local" class="aide" hidden>Pour OBS : <code>?obs=1&amp;cimetiere=1</code> à la fin de l'adresse
+      (<code>cimetiere=9G</code> ou <code>cimetiere=Kaizo</code> pour une seule version).</p>
+    <details id="cimetiere-obs-kit" class="aide" hidden>
+      <summary>Mon cimetière dans OBS</summary>
+      <ol>
+        <li><a href="suivi/cimetiere-obs.html" download>Télécharge le fichier OBS du cimetière</a> et range-le dans le dossier
+          de ton tracker, à côté de <code>savedData</code>.</li>
+        <li>Dans OBS : ajoute une source <b>Navigateur</b>, coche <b>Fichier local</b> et choisis ce fichier
+          (taille 1920 × 1080).</li>
+        <li>À chaque défaite, la carte va montrer l'endroit et l'annonce. Il n'y a rien à lancer à côté.</li>
+      </ol>
+    </details>
+  </section>
+
   <section>
     <h3>Ma progression</h3>
     <button id="partager" class="bouton">🔗 Partager un lien de ma progression</button>
@@ -168,8 +211,8 @@
 </div>
 
 <dialog id="dialogue-partage">
-  <h2>Partager ma progression</h2>
-  <p>Ce lien ouvre la carte avec tes coches de <b id="partage-jeu"></b>. Ceux qui l'ouvrent voient ta progression sans rien modifier chez eux.</p>
+  <h2 id="partage-titre">Partager ma progression</h2>
+  <p id="partage-texte"></p>
   <input id="lien-partage" type="text" readonly>
   <div class="ligne-boutons">
     <button id="copier-lien" class="bouton">📋 Copier le lien</button>
@@ -180,6 +223,14 @@
 
 <!-- Bandeau de position (surtout pour OBS) -->
 <div id="bandeau" hidden></div>
+<!-- Cimetière pour OBS : le total, et l'annonce de chaque nouvelle défaite -->
+<div id="cimetiere-obs" hidden>
+  <div class="titre">💀 Cimetière</div>
+  <div id="cimetiere-obs-total" class="total"></div>
+  <div id="cimetiere-obs-versions" class="versions"></div>
+  <div id="cimetiere-obs-pire" class="pire"></div>
+</div>
+<div id="cimetiere-annonce" hidden></div>
 <div id="mode-note" hidden>Clique sur la carte pour placer ta note — <button id="annuler-note">Annuler</button></div>
 
 <dialog id="aide">
@@ -193,6 +244,8 @@
       La carte suit alors ta partie <span id="aide-emulateur">BizHawk</span> et saute toute seule au bon endroit.
       Le panneau explique comment l'installer pour ce jeu.</li>
     <li><b>Pour OBS</b> : ajoute <code>?obs=1</code> à l'adresse (mini-carte qui suit ta position).</li>
+    <li id="aide-cimetiere"><b>Cimetière</b> : un point par défaite, là où la run s'est arrêtée. Panneau « 💀 Cimetière »,
+      bouton <b>Relier mon tracker</b> ; il explique aussi comment le mettre dans OBS.</li>
   </ul>
   <h3>Raccourcis clavier</h3>
   <table class="raccourcis">
@@ -224,6 +277,7 @@
 <script src="donnees/guide-soleil.js?v=590c8cb2"></script>
 <script src="donnees/ultrasoleil.js?v=cfe067eb"></script>
 <script src="donnees/guide-ultrasoleil.js?v=19a2ad49"></script>
-<script src="carte.js?v=3b73b9c6"></script>
+<script src="lecture-tracker.js?v=0cfd9951"></script>
+<script src="carte.js?v=23586f2f"></script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<!--
+  CIMETIÈRE IRONMON POUR OBS : un point par défaite, à l'endroit où ta run s'est arrêtée,
+  lu dans l'historique de ton tracker IronMON (jeux DS sur BizHawk). Carte IronMON FR.
+
+  1. Range ce fichier dans le dossier de ton tracker : celui où se trouvent Ironmon-Tracker.lua et « savedData ».
+  2. Dans OBS : ajoute une source « Navigateur », coche « Fichier local » et choisis ce fichier.
+     Taille conseillée : 1920 x 1080.
+  3. C'est tout. À chaque run perdue, la carte va montrer l'endroit et l'annonce (relu toutes les 10 secondes).
+
+  Réglages (facultatifs), dans les guillemets ci-dessous :
+  - JEU : "hgss", "platine", "noire" ou "noire2" pour toujours montrer ce jeu
+          (vide : la carte suit le jeu de ta défaite la plus récente) ;
+  - VERSION : une seule version, par exemple "SoulSilver" ou "9G" (vide : toutes).
+
+  Rien n'est envoyé nulle part : ton historique est lu sur ton PC. La carte (images, code) vient du site
+  https://ryuziix-fr.github.io/carte-ironmon-fr/ : il faut être connecté à Internet.
+-->
+<meta charset="utf-8">
+<title>Cimetière IronMON</title>
+<style>html, body { margin: 0; background: transparent; color: #f6e9eb; font: 600 18px "Segoe UI", system-ui, sans-serif; }
+  #attente { position: fixed; left: 16px; top: 16px; padding: 10px 16px; border-radius: 12px; background: rgba(16, 8, 11, 0.86); }</style>
+<div id="attente">💀 Cimetière : chargement de la carte…</div>
+<script>
+  const JEU = "";
+  const VERSION = "";
+  const SITE = new URLSearchParams(location.search).get("site") || "https://ryuziix-fr.github.io/carte-ironmon-fr/";
+
+  (async () => {
+    try {
+      const reponse = await fetch(new URL("index.html", new URL(SITE, location.href)), { cache: "no-store" });
+      if (!reponse.ok) throw new Error("site " + reponse.status);
+      const page = await reponse.text();
+      // La page de la carte, avec ses fichiers pris sur le site et l'adresse de ce dossier pour lire l'historique
+      const reglages = `<base href="${new URL(SITE, location.href).href}">`
+        + `<script>window.CIMETIERE_KIT = ${JSON.stringify({ base: location.href.split("?")[0], jeu: JEU, version: VERSION })};<\/script>`;
+      document.open();
+      document.write(page.replace(/<head>/i, "<head>" + reglages));
+      document.close();
+    } catch (e) {
+      document.getElementById("attente").textContent = "💀 Cimetière : impossible de charger la carte (" + e.message
+        + "). Vérifie ta connexion à Internet, puis actualise la source dans OBS.";
+    }
+  })();
+</script>
