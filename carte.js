@@ -10,8 +10,9 @@ const params = new URLSearchParams(location.search);
 // cette page et donne l'adresse de son dossier (window.CIMETIERE_KIT) ; la carte s'affiche alors en mode OBS
 const KIT = window.CIMETIERE_KIT || null;
 const OBS = params.has("obs") || !!KIT;
-// ?morts=… : le cimetière partagé par quelqu'un (lecture seule)
+// ?morts=… : le cimetière partagé par quelqu'un (lecture seule), pour ses viewers ; il ouvre toujours la carte publique
 const MORTS = params.get("morts");
+const SITE_EN_LIGNE = "https://ryuziix-fr.github.io/carte-ironmon-fr/";
 // ?cimetiere=1 : un point par défaite (historique du tracker) ; avec ?obs=1, toute la carte des défaites pour le stream
 const CIMETIERE = params.has("cimetiere") || !!MORTS || !!KIT;
 const $ = (id) => document.getElementById(id);
@@ -85,7 +86,12 @@ const reglagesParDefaut = { trace: true, dresseurs: true, objets: true, ct: true
 let reglages;
 try { reglages = Object.assign({}, reglagesParDefaut, JSON.parse(localStorage.getItem("carte-ironmon-reglages") || "{}")); }
 catch (e) { reglages = Object.assign({}, reglagesParDefaut); }
-const sauverReglages = () => { try { localStorage.setItem("carte-ironmon-reglages", JSON.stringify(reglages)); } catch (e) {} };
+// Lien de cimetière partagé : une carte épurée pour les viewers (sans dresseurs ni objets), sans toucher à leurs réglages
+if (MORTS) Object.assign(reglages, { dresseurs: false, objets: false, ct: false, caches: false, passages: false, itineraires: false, notes: false });
+const sauverReglages = () => {
+  if (MORTS) return;
+  try { localStorage.setItem("carte-ironmon-reglages", JSON.stringify(reglages)); } catch (e) {}
+};
 
 // ---------- La carte ----------
 const map = L.map("carte", {
@@ -100,7 +106,7 @@ else L.control.zoom({ position: "bottomright", zoomInTitle: "Zoomer", zoomOutTit
 const majZoom = () => { $("carte").dataset.zoom = Math.floor(map.getZoom()); };
 map.on("zoomend", majZoom);
 
-let jeuId = params.get("jeu") || (KIT && KIT.jeu) || null;
+let jeuId = params.get("jeu") || (KIT && KIT.jeu) || (MORTS && MORTS.split(".")[1]) || null;
 try { jeuId = jeuId || localStorage.getItem("carte-ironmon-jeu"); } catch (e) { /* stockage bloqué */ }
 jeuId = jeuId || "hgss";
 if (!JEUX[jeuId]) jeuId = Object.keys(JEUX)[0];
@@ -1023,20 +1029,34 @@ function groupesCimetiere() {
   return { groupes: [...groupes.values()].sort((a, b) => b.defaites.length - a.defaites.length), perdus };
 }
 
+// La défaite la plus récente : { lieu, d } (dans un lien partagé, celle que le lien décrit)
+function derniereDefaite(groupes) {
+  const recente = cimetiere?.jeux?.[jeuId]?.recente;
+  if (recente) {
+    const l = lieuDeDefaite(recente);
+    return l && versionMontree(recente.v) ? { lieu: l, d: recente } : null;
+  }
+  let best = null;
+  for (const g of groupes) for (const d of g.defaites) if (!d.partage && (!best || d.t > best.d.t)) best = { lieu: g.lieu, d };
+  return best;
+}
+const memeLieu = (a, b) => a && b && a.region === b.region && a.x === b.x && a.y === b.y;
+const ligneDefaite = (d) => `<li><i class="pt" style="background:${couleurVersion(d.v)}"></i><span class="date">${dateCourte(d.t)}</span>`
+  + `<span><span class="nom">${echap(d.moi)}</span> niv. ${d.niv}, K.O. par <span class="nom">${echap(d.lui)}</span> niv. ${d.nivLui}`
+  + `${d.badges ? ` · ${pluriel(d.badges, "badge")}` : ""}</span></li>`;
+
 function bulleCimetiere(g) {
   const n = g.defaites.length, titre = `<strong>💀 ${echap(g.lieu.nom)}</strong><span class="total">${pluriel(n, "défaite")}</span>`;
-  // Lien partagé : seulement le nombre par version
+  // Lien partagé : le nombre par version, et la dernière défaite si elle a eu lieu ici
   if (g.defaites[0].partage) {
     const parVersion = {};
     for (const d of g.defaites) parVersion[d.v] = (parVersion[d.v] || 0) + 1;
-    const v = Object.entries(parVersion);
-    return titre + (v.length > 1 ? `<ul>${v.map(([nom, k]) => `<li><i class="pt" style="background:${couleurVersion(nom)}"></i>${echap(nom)} : ${k}</li>`).join("")}</ul>` : "");
+    const v = Object.entries(parVersion), der = derniereDefaite([g]);
+    return titre + (v.length > 1 ? `<ul>${v.map(([nom, k]) => `<li><i class="pt" style="background:${couleurVersion(nom)}"></i>${echap(nom)} : ${k}</li>`).join("")}</ul>` : "")
+      + (der && memeLieu(der.lieu, g.lieu) ? `<em>La plus récente :</em><ul>${ligneDefaite(der.d)}</ul>` : "");
   }
   const montrees = g.defaites.slice(-6).reverse(), reste = n - montrees.length;
-  const lignes = montrees.map((d) => `<li><i class="pt" style="background:${couleurVersion(d.v)}"></i><span class="date">${dateCourte(d.t)}</span>`
-    + `<span><span class="nom">${echap(d.moi)}</span> niv. ${d.niv}, K.O. par <span class="nom">${echap(d.lui)}</span> niv. ${d.nivLui}`
-    + `${d.badges ? ` · ${pluriel(d.badges, "badge")}` : ""}</span></li>`).join("");
-  return titre + `<ul>${lignes}</ul>` + (reste ? `<em>et ${reste} plus ancienne${reste > 1 ? "s" : ""}</em>` : "");
+  return titre + `<ul>${montrees.map(ligneDefaite).join("")}</ul>` + (reste ? `<em>et ${reste} plus ancienne${reste > 1 ? "s" : ""}</em>` : "");
 }
 
 // Un lieu = un bouquet de points disposés en tournesol : les plus anciennes au centre, les plus récentes autour
@@ -1075,9 +1095,13 @@ function dessinerCimetiere(nouvelles) {
   majResumeCimetiere();
   if (!montrerCimetiere()) return;
   const { groupes } = groupesCimetiere();
-  let derniere = null;
-  for (const g of groupes) for (const d of g.defaites) if (!derniere || d.t > derniere.t) derniere = d;
-  if (derniere && derniere.partage) derniere = null;
+  // La dernière défaite bat doucement (dans un lien partagé : le dernier point de son lieu)
+  const der = derniereDefaite(groupes);
+  let derniere = der && !der.d.partage ? der.d : null;
+  if (der && der.d.partage === undefined && der.d.ref) {
+    const g = groupes.find((x) => memeLieu(x.lieu, der.lieu));
+    derniere = g ? g.defaites[g.defaites.length - 1] : null;
+  }
   cimetiereCouche = L.layerGroup(groupes.filter((g) => g.lieu.region === regionId)
     .map((g) => marqueurTombes(g, derniere, nouvelles))).addTo(map);
 }
@@ -1098,8 +1122,10 @@ function majResumeCimetiere() {
   $("cimetiere-donnees").hidden = !cimetiere;
   $("cimetiere-partage").hidden = !partage;
   $("ligne-voir-cimetiere").hidden = partage;
-  $("btn-lien-cimetiere").hidden = partage || !cimetiere?.jeux?.[jeuId];
-  $("cimetiere-obs").hidden = !(cimetiere && OBS && CIMETIERE);
+  $("btn-lien-cimetiere").hidden = $("ligne-pseudo").hidden = partage || !cimetiere?.jeux?.[jeuId];
+  // L'encart (total, pire endroit, dernière défaite) : dans OBS, et en haut de la page qu'ouvrent les viewers
+  const encart = !!cimetiere && ((OBS && CIMETIERE) || partage);
+  $("cimetiere-obs").hidden = !encart;
   if (!cimetiere) return;
   const j = cimetiere.jeux?.[jeuId];
   const { groupes, perdus } = groupesCimetiere();
@@ -1137,25 +1163,28 @@ function majResumeCimetiere() {
   const p = Object.entries(perdus);
   $("cimetiere-perdus").hidden = !p.length;
   $("cimetiere-perdus").textContent = p.length ? "Pas placés (lieu inconnu de la carte) : " + p.map(([l, n]) => `${l} (${n})`).join(", ") + "." : "";
-  // Encart du stream : le total et le pire endroit
-  if (OBS && CIMETIERE) {
+  // Encart : le total, le pire endroit et la dernière défaite
+  if (encart) {
+    $("cimetiere-obs-titre").textContent = cimetiere.pseudo ? `💀 Cimetière de ${cimetiere.pseudo}` : "💀 Cimetière";
     if (typeSource === "kit" && cimetiere.fichiers === 0) {
       $("cimetiere-obs-total").textContent = "Aucun historique trouvé";
-      $("cimetiere-obs-versions").innerHTML = "";
+      $("cimetiere-obs-versions").innerHTML = $("cimetiere-obs-derniere").textContent = "";
       $("cimetiere-obs-pire").textContent = "Range ce fichier dans le dossier de ton tracker, à côté de « savedData ».";
       return;
     }
     $("cimetiere-obs-total").textContent = pluriel(total, "défaite");
     $("cimetiere-obs-versions").innerHTML = Object.entries(j?.versions || {}).filter(([v]) => versionMontree(v))
       .map(([v, nb]) => `<span><i class="pt" style="background:${couleurVersion(v)}"></i>${echap(v)} ${nb}</span>`).join("");
-    const pire = groupes[0];
+    const pire = groupes[0], der = derniereDefaite(groupes);
     $("cimetiere-obs-pire").textContent = pire ? `Pire endroit : ${pire.lieu.nom} (${pire.defaites.length})` : "";
+    $("cimetiere-obs-derniere").textContent = der
+      ? `Dernière : ${der.lieu.nom}, ${der.d.moi} niv. ${der.d.niv} K.O. par ${der.d.lui} (${dateCourte(der.d.t)})` : "";
   }
 }
 
-// OBS : la région la plus meurtrière, cadrée pour voir tous ses points
+// OBS et lien partagé : la région la plus meurtrière, cadrée pour voir ses points
 function cadrerCimetiere() {
-  if (!(OBS && CIMETIERE) || !cimetiere) return;
+  if (!((OBS && CIMETIERE) || MORTS) || !cimetiere) return;
   const { groupes } = groupesCimetiere();
   if (!groupes.length) return;
   const parRegion = {};
@@ -1174,7 +1203,21 @@ function cadrerCimetiere() {
     points.push(ll(g.lieu.x, g.lieu.y));
     cumul += g.defaites.length;
   }
-  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.25), { maxZoom: 4, animate: false });
+  if (!points.length) return;
+  // L'encart (en haut, ou en bas sur téléphone) ne doit pas cacher les points
+  const options = { maxZoom: 4, animate: false }, e = $("cimetiere-obs");
+  if (!e.hidden) {
+    const r = e.getBoundingClientRect();
+    if (r.top > innerHeight / 2) options.paddingBottomRight = [0, innerHeight - r.top + 8];
+    else options.paddingTopLeft = [0, r.bottom + 8];
+  }
+  const limites = L.latLngBounds(points).pad(0.2);
+  map.fitBounds(limites, options);
+  // Téléphone : un peu plus près (les bouquets se touchent sinon), on fait glisser la carte pour voir le reste
+  if (innerWidth < 640 && map.getZoom() < 3) {
+    map.setView(limites.getCenter(), 3, { animate: false });
+    if (options.paddingBottomRight) map.panBy([0, options.paddingBottomRight[1] / 2], { animate: false });
+  }
 }
 
 // Une nouvelle défaite : son point tombe en place ; en OBS, la carte va la montrer puis revient à la vue d'ensemble
@@ -1307,34 +1350,66 @@ async function reprendreTrackerGarde() {
   } catch (e) { /* stockage bloqué : on rechoisira le dossier */ }
 }
 
-// Lien partagé : le cimetière du jeu affiché (lieux et nombre de défaites par version), compressé dans l'adresse
-const base64url = (octets) => btoa(Array.from(octets, (o) => String.fromCharCode(o)).join("")).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-async function compresser(texte) {
-  const flux = new Blob([texte]).stream().pipeThrough(new CompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(flux).arrayBuffer());
+// Lien partagé, pensé pour le chat Twitch (moins de 500 caractères) : il ouvre toujours la carte publique.
+// ?morts=2.jeu.pseudo.versions.lieux.dernière, champs séparés par des points :
+//  - pseudo, versions (séparées par « | ») : texte en base64url ;
+//  - lieux : pour chaque lieu, son empreinte (4 caractères, tirée de « région:clé ») puis 2 caractères par version ;
+//  - dernière défaite : empreinte du lieu, jour, version, niveaux, puis « moi|lui » en base64url.
+// L'empreinte se retrouve parmi les lieux du jeu : le lien reste bon si la carte gagne des lieux.
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const JOUR_ZERO = 18262; // 1er janvier 2020, en jours depuis 1970
+const nombre64 = (n, largeur) => {
+  let s = "";
+  for (let i = 0; i < largeur; i++) { s = B64[n % 64] + s; n = Math.floor(n / 64); }
+  return s;
+};
+const lireNombre64 = (s) => [...s].reduce((n, c) => n * 64 + Math.max(0, B64.indexOf(c)), 0);
+const texte64 = (t) => btoa(Array.from(new TextEncoder().encode(t), (o) => String.fromCharCode(o)).join(""))
+  .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const lireTexte64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
+function empreinteLieu(rid, k) {
+  let h = 0x811c9dc5; // FNV-1a
+  for (const c of `${rid}:${k}`) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return nombre64(h & 0xffffff, 4);
 }
-async function decompresser(octets) {
-  const flux = new Blob([octets]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Response(flux).text();
-}
-async function lienCimetiere() {
+const pseudoCimetiere = () => { try { return localStorage.getItem("carte-ironmon-pseudo") || ""; } catch (e) { return ""; } };
+
+function lienCimetiere() {
   const { groupes } = groupesCimetiere();
   const versions = Object.keys(cimetiere.jeux[jeuId]?.versions || {}).filter(versionMontree);
-  const lieux = groupes.map((g) => [`${g.lieu.region}:${g.lieu.cle}`, ...versions.map((v) => g.defaites.filter((d) => d.v === v).length)]);
-  const code = base64url(await compresser(JSON.stringify({ j: jeuId, v: versions, l: lieux })));
-  return `${location.origin}${location.pathname}?jeu=${jeuId}&morts=${code}`;
+  const borne = (n) => Math.min(4095, Math.max(0, n | 0));
+  const lieux = groupes.map((g) => empreinteLieu(g.lieu.region, g.lieu.cle)
+    + versions.map((v) => nombre64(borne(g.defaites.filter((d) => d.v === v).length), 2)).join("")).join("");
+  const der = derniereDefaite(groupes);
+  const derniere = der && !der.d.partage ? empreinteLieu(der.lieu.region, der.lieu.cle)
+    + nombre64(Math.max(0, Math.floor(der.d.t / 86400) - JOUR_ZERO), 3) + nombre64(Math.max(0, versions.indexOf(der.d.v)), 1)
+    + nombre64(borne(der.d.niv), 2) + nombre64(borne(der.d.nivLui), 2) + texte64(`${der.d.moi}|${der.d.lui}`) : "";
+  const code = ["2", jeuId, texte64($("cimetiere-pseudo").value.trim()), texte64(versions.join("|")), lieux, derniere].join(".");
+  // Depuis le PC du stream (adresse locale), le lien mène quand même à la carte publique : c'est elle que les viewers ouvrent
+  return `${EN_LIGNE ? location.origin + location.pathname : SITE_EN_LIGNE}?morts=${code}`;
 }
-async function lireLienCimetiere(code) {
-  const octets = Uint8Array.from(atob(code.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
-  const p = JSON.parse(await decompresser(octets));
-  const defaites = [], versions = {};
-  for (const [ref, ...nb] of p.l) {
-    nb.forEach((n, i) => {
-      versions[p.v[i]] = (versions[p.v[i]] || 0) + n;
-      for (let k = 0; k < n; k++) defaites.push({ ref, v: p.v[i], t: 0, partage: true });
+function lireLienCimetiere(code) {
+  const [format, jid, pseudo64, versions64, lieux = "", derniere = ""] = code.split(".");
+  if (format !== "2" || !JEUX[jid]) throw new Error("format");
+  const parEmpreinte = {};
+  for (const [rid, r] of Object.entries(JEUX[jid].regions)) for (const k of Object.keys(r.lieux)) parEmpreinte[empreinteLieu(rid, k)] = `${rid}:${k}`;
+  const versions = lireTexte64(versions64).split("|"), largeur = 4 + 2 * versions.length;
+  const defaites = [], parVersion = {};
+  for (let i = 0; i + largeur <= lieux.length; i += largeur) {
+    const ref = parEmpreinte[lieux.slice(i, i + 4)] || "?";
+    versions.forEach((v, n) => {
+      const k = lireNombre64(lieux.slice(i + 4 + 2 * n, i + 6 + 2 * n));
+      parVersion[v] = (parVersion[v] || 0) + k;
+      for (let x = 0; x < k; x++) defaites.push({ ref, v, t: 0, partage: true });
     });
   }
-  return { jeux: { [p.j]: { versions, defaites } } };
+  let recente = null;
+  if (derniere.length > 12) {
+    const [moi, lui] = lireTexte64(derniere.slice(12)).split("|");
+    recente = { ref: parEmpreinte[derniere.slice(0, 4)] || "?", t: (lireNombre64(derniere.slice(4, 7)) + JOUR_ZERO) * 86400,
+      v: versions[lireNombre64(derniere[7])], niv: lireNombre64(derniere.slice(8, 10)), nivLui: lireNombre64(derniere.slice(10, 12)), moi, lui };
+  }
+  return { jeux: { [jid]: { versions: parVersion, defaites, recente } }, pseudo: pseudo64 ? lireTexte64(pseudo64) : "" };
 }
 
 // ---------- Réglages ----------
@@ -1376,7 +1451,7 @@ for (const [id, nom] of TOUS_LES_JEUX) {
   o.disabled = !JEUX[id];
   $("choix-jeu").appendChild(o);
 }
-let jeuChoisi = params.has("jeu") || !!(KIT && KIT.jeu);
+let jeuChoisi = params.has("jeu") || !!(KIT && KIT.jeu) || !!MORTS;
 $("choix-jeu").onchange = (ev) => { jeuChoisi = true; changerJeu(ev.target.value); index = []; };
 
 // ---------- Progression partagée (lecture seule) ----------
@@ -1401,16 +1476,19 @@ function ouvrirPartage(titre, texte, lien) {
 $("partager").onclick = () => ouvrirPartage("Partager ma progression",
   `Ce lien ouvre la carte avec tes coches de ${jeu.nom}. Ceux qui l'ouvrent voient ta progression sans rien modifier chez eux.`,
   `${location.origin}${location.pathname}?jeu=${jeuId}&prog=${coderProgression(jeu, etat.fait)}`);
-$("btn-lien-cimetiere").onclick = async () => {
-  try {
-    ouvrirPartage("Partager mon cimetière",
-      `Ce lien montre ton cimetière de ${jeu.nom} tel qu'il est maintenant : chaque lieu et son nombre de défaites. `
-      + "Ceux qui l'ouvrent le voient sans rien modifier.", await lienCimetiere());
-  } catch (e) {
-    erreurCimetiere = "Ce navigateur ne sait pas fabriquer le lien : essaie avec Chrome, Edge ou Firefox à jour.";
-    majResumeCimetiere();
-  }
+$("btn-lien-cimetiere").onclick = () => {
+  const lien = lienCimetiere();
+  ouvrirPartage("Partager mon cimetière",
+    `Ce lien montre ton cimetière de ${jeu.nom} tel qu'il est maintenant : chaque lieu, son nombre de défaites et la dernière. `
+    + "Tes viewers l'ouvrent sans rien installer, même sur téléphone. "
+    + (lien.length <= 470 ? "Il tient dans un message du chat Twitch." : "Il est un peu long pour le chat Twitch : colle-le plutôt sur Discord."),
+    lien);
 };
+// Le pseudo affiché sur la page des viewers (« Cimetière de … »), gardé pour la prochaine fois
+$("cimetiere-pseudo").value = pseudoCimetiere();
+$("cimetiere-pseudo").addEventListener("input", () => {
+  try { localStorage.setItem("carte-ironmon-pseudo", $("cimetiere-pseudo").value.trim()); } catch (e) { /* stockage bloqué */ }
+});
 $("copier-lien").onclick = async () => {
   try { await navigator.clipboard.writeText($("lien-partage").value); $("lien-copie").hidden = false; }
   catch (e) { $("lien-partage").select(); }
@@ -1583,7 +1661,7 @@ if (EN_LIGNE) {
     }
   }
   // En ligne, on arrive sur le choix du jeu (sauf lien direct ?jeu=…)
-  if (!OBS && !params.has("jeu")) ouvrirAccueil();
+  if (!OBS && !params.has("jeu") && !MORTS) ouvrirAccueil();
 } else if (!KIT) {
   lireTracker();
   setInterval(lireTracker, 3000);
@@ -1594,5 +1672,8 @@ if (MORTS) brancherCimetiere("partage", () => lireLienCimetiere(MORTS), false);
 else if (KIT) {
   const lecteur = LectureTracker.lecteurAdresse(KIT.base);
   brancherCimetiere("kit", () => LectureTracker.lire(lecteur));
-} else if (!EN_LIGNE) brancherCimetiere("serveur", sourceServeur);
-else reprendreTrackerGarde();
+} else if (!EN_LIGNE) {
+  // PC du stream de Ryuziix : son pseudo par défaut sur le lien des viewers
+  if (!$("cimetiere-pseudo").value) $("cimetiere-pseudo").value = "Ryuziix";
+  brancherCimetiere("serveur", sourceServeur);
+} else reprendreTrackerGarde();

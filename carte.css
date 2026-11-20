@@ -430,3 +430,16 @@ dialog h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; c
 @media (prefers-reduced-motion: reduce) {
   .cimetiere .tombe.derniere, .cimetiere .tombe.nouvelle, #cimetiere-annonce.entre { animation: none; }
 }
+
+/* Page des viewers (lien partagé) : l'encart sous la barre du haut, et en bas de l'écran sur téléphone */
+#cimetiere-obs .derniere { margin-top: 5px; max-width: 360px; font: 500 12.5px/1.35 var(--pixel); color: #e9cfd3; }
+#cimetiere-obs .derniere:empty, #cimetiere-obs .pire:empty { display: none; }
+body:not(.obs) #cimetiere-obs { top: calc(62px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); }
+@media (max-width: 640px) {
+  body:not(.obs) #cimetiere-obs { top: auto; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); right: calc(10px + env(safe-area-inset-right, 0px));
+    min-width: 0; padding: 8px 12px 10px; }
+  body:not(.obs) #cimetiere-obs .total { font-size: 22px; }
+}
+.ligne-pseudo { display: grid; gap: 4px; margin: 8px 0 2px; font-size: 12px; color: var(--doux); }
+.ligne-pseudo input { height: 32px; border-radius: 8px; border: 1px solid var(--bord); background: rgba(0, 0, 0, 0.3); color: var(--texte);
+  padding: 0 10px; font: inherit; font-size: 14px; }

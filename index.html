@@ -6,7 +6,7 @@
 <title>Carte IronMON FR</title>
 <link rel="icon" href="images/icones/pokeball.png">
 <link rel="stylesheet" href="lib/leaflet/leaflet.css?v=c02c12fe">
-<link rel="stylesheet" href="carte.css?v=27a051ef">
+<link rel="stylesheet" href="carte.css?v=07da5e67">
 </head>
 <body>
 <div id="carte"></div>
@@ -123,7 +123,9 @@
       <div id="cimetiere-versions"></div>
       <ul id="cimetiere-lieux" class="liste"></ul>
       <p id="cimetiere-perdus" class="aide" hidden></p>
-      <button id="btn-lien-cimetiere" class="bouton" hidden>🔗 Partager mon cimetière</button>
+      <label id="ligne-pseudo" class="ligne-pseudo" hidden>Ton pseudo, affiché à tes viewers :
+        <input id="cimetiere-pseudo" type="text" maxlength="25" placeholder="ex. Ryuziix" autocomplete="off"></label>
+      <button id="btn-lien-cimetiere" class="bouton" hidden>🔗 Partager mon cimetière à mes viewers</button>
     </div>
     <p id="cimetiere-obs-local" class="aide" hidden>Pour OBS : <code>?obs=1&amp;cimetiere=1</code> à la fin de l'adresse
       (<code>cimetiere=9G</code> ou <code>cimetiere=Kaizo</code> pour une seule version).</p>
@@ -225,10 +227,11 @@
 <div id="bandeau" hidden></div>
 <!-- Cimetière pour OBS : le total, et l'annonce de chaque nouvelle défaite -->
 <div id="cimetiere-obs" hidden>
-  <div class="titre">💀 Cimetière</div>
+  <div id="cimetiere-obs-titre" class="titre">💀 Cimetière</div>
   <div id="cimetiere-obs-total" class="total"></div>
   <div id="cimetiere-obs-versions" class="versions"></div>
   <div id="cimetiere-obs-pire" class="pire"></div>
+  <div id="cimetiere-obs-derniere" class="derniere"></div>
 </div>
 <div id="cimetiere-annonce" hidden></div>
 <div id="mode-note" hidden>Clique sur la carte pour placer ta note — <button id="annuler-note">Annuler</button></div>
@@ -278,6 +281,6 @@
 <script src="donnees/ultrasoleil.js?v=cfe067eb"></script>
 <script src="donnees/guide-ultrasoleil.js?v=19a2ad49"></script>
 <script src="lecture-tracker.js?v=0cfd9951"></script>
-<script src="carte.js?v=23586f2f"></script>
+<script src="carte.js?v=f413894e"></script>
 </body>
 </html>
