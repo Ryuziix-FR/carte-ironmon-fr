@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokédex Ryuziix — Confidentialité</title>
+  <style>
+    :root { color-scheme: dark; --fond:#0e0b14; --panneau:#171120; --texte:#f4edf8; --doux:#b8a9c9; --accent:#b18cff; --trait:#332744; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--fond); color:var(--texte); font:16px/1.6 "Segoe UI",Roboto,Arial,sans-serif; }
+    main { max-width:820px; margin:0 auto; padding:32px 20px 64px; }
+    h1 { font-size:32px; line-height:1.1; margin:0 0 6px; }
+    h1 span { color:var(--accent); }
+    .sub { color:var(--doux); margin:0 0 28px; }
+    h2 { font-size:20px; margin:30px 0 8px; color:#e8dcff; }
+    p, li { color:#ded3ea; }
+    ul { padding-left:22px; }
+    .card { background:var(--panneau); border:1px solid var(--trait); border-radius:14px; padding:18px 20px; margin:18px 0; }
+    a { color:var(--accent); }
+    .small { font-size:13px; color:var(--doux); }
+    code { background:#0a0710; border:1px solid var(--trait); border-radius:5px; padding:1px 5px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Pokédex <span>Ryuziix</span></h1>
+  <p class="sub">Politique de confidentialité de l’extension Twitch — 24 novembre 2026</p>
+
+  <div class="card">
+    <p><strong>En résumé :</strong> l’extension affiche les résultats du quiz Pokémon de la chaîne Twitch
+    <code>ryuziix</code>. Elle ne collecte aucune donnée elle-même, n’utilise ni cookie ni publicité, et ne
+    demande jamais de mot de passe.</p>
+  </div>
+
+  <h2>1. Qui est responsable ?</h2>
+  <p>L’extension <strong>Pokédex Ryuziix</strong> est éditée pour la chaîne Twitch <strong>ryuziix</strong>.
+  Contact : via la chaîne Twitch ou les <a href="https://github.com/Ryuziix-FR/carte-ironmon-fr/issues">issues du dépôt GitHub</a>.</p>
+
+  <h2>2. Données affichées</h2>
+  <p>Le Pokédex reprend les informations publiques du quiz de la chaîne :</p>
+  <ul>
+    <li>le pseudo et le nom d’affichage Twitch du viewer ;</li>
+    <li>l’identifiant Twitch opaque fourni par l’extension, pour retrouver automatiquement sa collection ;</li>
+    <li>les Pokémon capturés, leur variante shiny, la date de capture et, le cas échéant, les points du quiz ;</li>
+    <li>le classement et la progression du Pokédex.</li>
+  </ul>
+  <p>Ces informations sont déjà visibles dans le chat et dans le quiz. Elles ne contiennent pas d’adresse
+  e-mail, de numéro de téléphone, de données bancaires ni de mot de passe.</p>
+
+  <h2>3. Ce que l’extension ne fait pas</h2>
+  <ul>
+    <li>Elle ne collecte pas de données en arrière-plan.</li>
+    <li>Elle n’utilise pas de cookies, de traceurs publicitaires ni d’outil d’analyse.</li>
+    <li>Elle ne demande pas les identifiants Twitch du viewer.</li>
+    <li>Elle ne modifie pas le compte Twitch et ne publie rien à sa place.</li>
+  </ul>
+
+  <h2>4. Où vont les données</h2>
+  <p>La page du panneau lit un fichier JSON public hébergé sur GitHub
+  (<code>raw.githubusercontent.com</code>) et charge les illustrations depuis les dépôts publics de
+  PokeAPI. Ces services reçoivent les requêtes techniques habituelles (adresse IP, agent utilisateur)
+  selon leurs propres politiques. L’extension elle-même n’envoie aucune donnée à un serveur qui lui
+  appartiendrait.</p>
+
+  <h2>5. Conservation et suppression</h2>
+  <p>Les résultats sont conservés dans les sauvegardes du quiz de la chaîne et dans le fichier public
+  mis à jour par le streamer. Un viewer peut demander la correction ou la suppression de sa ligne
+  (pseudo, collection) en contactant la chaîne. La suppression est appliquée à la mise à jour suivante
+  du fichier public.</p>
+
+  <h2>6. Public</h2>
+  <p>L’extension est destinée aux spectateurs de la chaîne. Elle n’est pas conçue pour les enfants de
+  moins de 13 ans et ne collecte pas sciemment leurs données.</p>
+
+  <h2>7. Modifications</h2>
+  <p>Cette politique peut être mise à jour si l’extension change de fonctionnement. La date en haut de
+  page indique la dernière version.</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">English summary</h2>
+    <p class="small">This Twitch extension displays the public results of the channel’s Pokémon quiz:
+    Twitch display name, opaque Twitch user ID, captured Pokémon, shiny status, capture date and quiz
+    score. The extension itself collects no data, uses no cookies or analytics and never asks for
+    credentials. It reads a public JSON file from GitHub and images from PokeAPI. Contact the channel
+    or the GitHub repository to request correction or deletion of your entry.</p>
+  </div>
+</main>
+</body>
+</html>
